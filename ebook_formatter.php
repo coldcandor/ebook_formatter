@@ -3,15 +3,15 @@
 include 'ASCII.php';
 
 /* IDEA: Add a GUI
- * PROBLEM: Worst case paragraph scenario
+ * TODO: Worst case paragraph scenario
  * TODO: Add ASCII
  * TODO: Add RTF formatting removal
- * PROBLEM: Formatted quotes (like poems, songs, letter readings, T.O.C., etc)
+ * TODO: Formatted quotes (like poems, songs, letter readings, T.O.C., etc)
  * TODO: Fix things like bad ellipses
  * IDEA: Detect mismatched quotes
  * IDEA: Detect seperators (like a line of dashes, ****, or multiple blank lines)
  * IDEA: Remove email-style reply inserts (like > at the start of each line)
- * TODO: Move file output to a seperate function call
+ * TODO: Possibly implement line length method of detecting paragraphs
  */
 
 // Output a blank line for readability
@@ -33,19 +33,15 @@ $fileString = '';
 switch($argv[3]) {
   case 1:
     type1();
-    outputToFile();
     break;
   case 2:
     type2();
-    outputToFile();
     break;
   case 3:
     removeRTF();
-    outputToFile();
     break;
   case 4:
     ASCII();
-    outputToFile();
     break;
   default:
   
@@ -56,11 +52,16 @@ switch($argv[3]) {
     break;
     
 } // End switch statement
+
+outputToFile();
+
+
   
 function type1() {
   
   global $fileArray;
   global $fileString;
+  $tags = array();
   
   // Establish tags - essentially new paragraghs.
   reset($fileArray);
@@ -68,14 +69,45 @@ function type1() {
     
     // Check for evidence of a new paragraph: a blank line, a tab or multiple
     // spaces at the start of a line.  If found, add a tag on that line.
-    if(preg_match("/^[\n\t\s{2,}]/", current($fileArray))) {
+    if(preg_match("/^[\n\t\s{2,}]+/", current($fileArray))) {
       $tags[] = key($fileArray);
     } // End if statement
     
+    // Check for additional new paragraph markings:  - | -" | - " | -' | - '
+    if(preg_match("/-[ ]*(\'|\"|)[ ]*$/", current($fileArray))) {
+      $tags[] = key($fileArray) + 1;
+    } // End if statement
+    
+    // Check for additional new paragraph markings:  . | ." | . " | .' | . '
+    if(preg_match("/\.[ ]*(\'|\"|)[ ]*$/", current($fileArray))) {
+      $tags[] = key($fileArray) + 1;
+    } // End if statement
+
+    // Check for additional new paragraph markings:  Quote at start of line
+    if(preg_match("/^(\'|\")/", current($fileArray))) {
+      $tags[] = key($fileArray);
+    } // End if statement
+
+    // Break apart conversations that take place on one line (e.g. ...' '... or
+    // ..." "...)
+    $fileArray[key($fileArray)] = 
+        preg_replace("/(\'|\")[ ]+(\'|\")/", "$1\n\n\t$2", current($fileArray));
+      
+    // Fix ellipses
+    $fileArray[key($fileArray)] = 
+        preg_replace("/[ ]?\.[ ]?\.[ \.]{0,5}/", '...', current($fileArray));
+
+    // Fix places where ellipses and quotes have no spacing before the next word
+    $fileArray[key($fileArray)] = 
+        preg_replace("/(\.\.\.)(\w)/", "$1  $2", current($fileArray));
+        
     next($fileArray);
     
   } // End while loop
   
+  print_r($tags);
+  //print_r($fileArray);
+
   // Eliminate blank lines
   reset($fileArray);
   while(current($fileArray)) {
@@ -89,20 +121,35 @@ function type1() {
   reset($fileArray);
   while(current($fileArray)) {
     
-    $currentString = '';
+    //$currentString = '';
+    
+    //print_r($tags);
     
     // Strip newlines
-    while(current($fileArray) && !array_search(key($fileArray), $tags)) {
-      $currentString .= preg_replace("/[\n\r]+/", ' ', current($fileArray));
+    while(current($fileArray) && !in_array(key($fileArray), $tags)) {
+      $currentString .= preg_replace("/[\n\r]+?$/", ' ', current($fileArray));
+      //echo "No tag match on element ", key($fileArray), "\n";
       next($fileArray);
     } // End while loop
+    
+    //print_r(char_to_ASCII($currentString, array("word", 32, 46, 44)));
+    //print_r(ASCII_to_char(char_to_ASCII($currentString, array("word", 32, 46, 44))));
   
+    //echo $currentString, "\n\n\n\n";
+    
     // Trim whitespace and format paragraph
     $currentString = preg_replace("/^\s*/", "\t", $currentString);
     $currentString = preg_replace("/\s*$/D", "\n", $currentString);
     
+    //print_r(char_to_ASCII($currentString, array("word", 32, 46, 44)));
+    //print_r(ASCII_to_char(char_to_ASCII($currentString, array("word", 32, 46, 44))));
+  
+    //echo $currentString, "\n";
+
     // Append current string to output string
     $fileString .= $currentString;
+    
+    $currentString = preg_replace("/[\n\r]+?$/", ' ', current($fileArray));
     
     next($fileArray);
     
@@ -150,19 +197,6 @@ function ASCII() {
   // Preform ASCII conversion using values of all program arguements beyond 4  
   
 } // End function ASCII()
-
-function fixUp() {
-  
-  global $fileArray;
-  global $fp1;
-  
-  reset($fileArray);
-  while(current($fileArray)) {
-    $fileArray[key($fileArray)] = 
-        preg_replace("/[ ]\.[ ]\.[ ][\.][ ][\.*]/", '...', current($fileArray));
-  } // End while loop
-  
-} // End function fixUp()
 
 function detectQuoteErrors() {
 
