@@ -1,14 +1,36 @@
 <?php
 
+/*
+ * eBookFormatter.php version 1.2.6
+ *
+ * Copyright 2005 Eric Shields
+ */
+ 
+ /**  This program is free software; you can redistribute it and/or modify
+  *   it under the terms of the GNU General Public License as published by
+  *   the Free Software Foundation; either version 2 of the License, or
+  *   (at your option) any later version.
+  *
+  *   This program is distributed in the hope that it will be useful,
+  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  *   GNU General Public License for more details.
+  *
+  *   You should have received a copy of the GNU General Public License
+  *   along with this program; if not, write to the Free Software
+  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+
 include 'ASCII.php';
 
 /* IDEA: Add a GUI
- * TODO: Add ASCII
- * TODO: Formatted quotes (like poems, songs, letter readings, T.O.C., etc)
+ * IDEA: Add ASCII
  * IDEA: Detect mismatched quotes
  * IDEA: Detect seperators (like a line of dashes, ****, or multiple blank lines)
  * IDEA: Remove email-style reply inserts (like > at the start of each line)
+ * IDEA: Option to create \n terminated text at a certain column
  * TODO: Possibly implement line length method of detecting paragraphs
+ * TODO: Formatted quotes (like poems, songs, letter readings, T.O.C., etc)
  */
 
 // Output a blank line for readability
@@ -54,6 +76,12 @@ outputToFile();
 
 /////////// End main "method"
   
+/* This is the meat of the application.  It will take a raw text file with \n
+ * terminated lines (or \n\r, as in windows), strip out the blank lines, remove
+ * the terminating newlines, sort out the paragraphs, fix a few common OCR
+ * errors (such as badly formed ellipses), indent and space the paragraphs, and
+ * spit the result back out to a file.
+ */
 function type1() {
   
   global $fileArray;
@@ -65,7 +93,9 @@ function type1() {
   reset($fileArray);
   while(current($fileArray)) {
     
-    // Convert the line to ASCII numbers for easier dealings
+    // Convert the line to ASCII numbers for easier dealings.  If by some
+    // bizzare chance, an ASCII code '1' exists in the file, this will ignore
+    // it.  (ASCII code '1' is 'NUL' or the NULL character.)
     $ASCIIarray = char_to_ASCII(current($fileArray), array(1));
     
     // Check each ASCII character in the line
@@ -143,19 +173,6 @@ function type1() {
       $tags[] = key($fileArray);
     } // End if statement
 
-    // Break apart conversations that take place on one line (e.g. ...' '... or
-    // ..." "...)
-    $fileArray[key($fileArray)] = 
-        preg_replace("/(\'|\")[ ]+(\'|\")/", "$1\n\n\t$2", current($fileArray));
-      
-    // Fix ellipses
-    $fileArray[key($fileArray)] = 
-        preg_replace("/[ ]?\.[ ]?\.[ \.]{0,5}/", '...', current($fileArray));
-
-    // Fix places where ellipses and quotes have no spacing before the next word
-    $fileArray[key($fileArray)] = 
-        preg_replace("/(\.\.\.)(\w)/", "$1  $2", current($fileArray));
-        
     next($fileArray);
     
   } // End while loop
@@ -166,11 +183,13 @@ function type1() {
   reset($fileArray);
   while(current($fileArray)) {
     
-    //print_r($tags);
+    // Trim any whitespace from the start of the line
+    $currentString = preg_replace("/^\s*/", "", $currentString);
     
     // Strip newlines
     while(current($fileArray) && !in_array(key($fileArray), $tags)) {
-      $currentString .= preg_replace("/[\n\r]+?$/", ' ', current($fileArray));
+      echo "RUN ME!!!!!!!!!!!!!!!!!!!!!!\n";
+      $currentString .= preg_replace("/\s*$/", '', current($fileArray));
       next($fileArray);
     } // End while loop
     
@@ -181,7 +200,7 @@ function type1() {
     // Append current string to output string
     $fileString .= $currentString;
     
-    $currentString = preg_replace("/[\n\r]+?$/", ' ', current($fileArray));
+    $currentString = preg_replace("/\s*$/", ' ', current($fileArray));
        
     next($fileArray);
     
@@ -192,9 +211,14 @@ function type1() {
   $currentString = preg_replace("/\s*$/D", "", $currentString);
 
   $fileString .= $currentString;
+  //$fileString = fixUp($fileString);
   
 } // End function type1()
 
+/* This function is for files in which each line is not ended by a newline.  In
+ * other words, the paragraphs are already determined.  The only purpose of
+ * this function is to indent and space the paragraphs.
+ */
 function type2() {
   
   global $fileArray;
@@ -218,6 +242,10 @@ function type2() {
   
 } // End function type2()
 
+/* Remove RTF style formatting.  In some situations, this will remove bits of
+ * real text, such as {<format text>} <real text>.  The whole line will be
+ * removed.
+ */
 function removeRTF() {
   
   global $fileArray;
@@ -225,9 +253,12 @@ function removeRTF() {
   
   reset($fileArray);
   while(current($fileArray)) {
+    
+    // Get strings that the regular expression parser will accept
     $tab = preg_quote('\tab');
     $par = preg_quote('\par');
-    echo preg_quote('\\'), "\n";
+    
+    // Remove \tab, \par, and any lines that start with \, }, or {
     $fileArray[key($fileArray)] = 
         preg_replace("/($par |$tab )/", '', current($fileArray));
     $fileArray[key($fileArray)] = 
@@ -235,13 +266,32 @@ function removeRTF() {
     $fileArray[key($fileArray)] = 
         preg_replace("/^\\\\.*$/", '', current($fileArray));
 
+    // Add current string to final one
     $fileString .= current($fileArray);
     
     next($fileArray);
+    
   } // End while loop
   
 } // End function removeRTF()
 
+function fixUp($broken) {
+  
+  // Fix double spaces, except after periods
+  $broken = preg_replace("/([^\.])  /", "$1 ", $broken);    
+      
+  // Break apart conversations that take place on one line (e.g. ...' '... or
+  // ..." "...)
+  $broken = preg_replace("/(\'|\")[ ]+(\'|\")/", "$1\n\n\t$2", $broken);
+    
+  // Fix ellipses
+  $broken = preg_replace("/[ ]?\.[ ]?\.[ \.]{0,5}/", '...', $broken);
+
+  // Fix places where ellipses and quotes have no spacing before the next word
+  $fixed = preg_replace("/(\.\.\.)(\w)/", "$1  $2", $broken);
+        
+  return $fixed;
+        
 function ASCII() {
   
   global $fileArray;
@@ -267,6 +317,8 @@ function detectSeperators() {
   
 } // End function detectSeperators()
 
+/* Output the final product, $fileString, to the file opened earlier.
+ */
 function outputToFile() {
   
   global $fp1;
