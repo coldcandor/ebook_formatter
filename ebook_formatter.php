@@ -1,57 +1,72 @@
 <?php
 
-/**
- * eBookFormatter.php version 1.2.7
- *
- * @author Eric Shields
- */
- 
-//include 'ASCII.php';
+$version = "1.3.0";
+$copyright = "2005 Eric Shields";
+
+/**  This program is free software; you can redistribute it and/or modify
+  *   it under the terms of the GNU General Public License as published by
+  *   the Free Software Foundation; either version 2 of the License, or
+  *   (at your option) any later version.
+  *
+  *   This program is distributed in the hope that it will be useful,
+  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  *   GNU General Public License for more details.
+  *
+  *   You should have received a copy of the GNU General Public License
+  *   along with this program; if not, write to the Free Software
+  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
 
 /* IDEA: Add a GUI
- * IDEA: Add ASCII
  * IDEA: Detect mismatched quotes
  * IDEA: Detect seperators (like a line of dashes, ****, or multiple blank lines)
  * IDEA: Remove email-style reply inserts (like > at the start of each line)
  * IDEA: Option to create \n terminated text at a certain column
+ * IDEA: Completely modularize the features
  * TODO: Possibly implement line length method of detecting paragraphs
  * TODO: Formatted quotes (like poems, songs, letter readings, T.O.C., etc)
+ * TODO: Check for chapter names (short line immediately following chapter line)
+ * TODO: Correct spacing around dashes
  */
 
 // Output a blank line for readability
 echo "\n";
 
 // Input error checking and file setup.
-if(count($argv) != 4 && $argv[3] != 4) {
-  exit("Usage:  php eBookFormatter.php <Input File> <Output File> <function>\n" . 
-       "If function 4 is selected, enter ASCII arguements as per ASCII.php as well.\n");
-} else if(!$fileArray = file($argv[1])) {
-  exit("Fatal Error:  Could not open input file ($argv[1])!\n\n");
+if(count($argv) != 4) {
+  exit("Usage:  php eBookFormatter.php <Input File> <Output File> <function>\n");
+} else if(!$inputString = file_get_contents($argv[1])) {
+  exit("Fatal Error(eBookFormatter.php):  Could not open input file ($argv[1])!\n\n");
 } else if(!$fp1 = fopen($argv[2], 'w')) {
-  exit("Fatal Error:  Could not open output file ($argv[2])!\n\n");
+  exit("Fatal Error(eBookFormatter.php):  Could not open output file ($argv[2])!\n\n");
 } // End if - else if statements
 
 // Initialize output string
-$fileString = '';
+$fileString = "{Automatically formatted using eBookFormatter v" . $version . "\n"
+. " Copyright " . $copyright . "}\n\n";
+
+// Create the line array
+$fileArray = preg_split("/[\n\r]+/", $inputString);
+
+foreach($fileArray as $v) {
+  if(preg_match("/[\n\r]+/", $v)) {
+    exit("Fatal Error(eBookFormatter.php):  Split did not preform correctly!");
+  } // End if statement
+} // End foreach loop
 
 switch($argv[3]) {
   case 1:
     type1();
     break;
   case 2:
-    type2();
-    break;
-  case 3:
     removeRTF();
-    break;
-  case 4:
-    
     break;
   default:
   
     // Close output file and error out of program.
     fclose($fp1);  
-    exit("Error:  Function select value must be in the range of 1 to 4\n\n");
+    exit("Fatal Error(eBookFormatter.php):  Function select value must be in the range of 1 to 4\n\n");
     
     break;
     
@@ -79,9 +94,8 @@ function type1() {
   while(current($fileArray)) {
     
     // If it's not a tab, newline, carriage return, or space, keep the line
-    if(preg_match("/[^\x09\x0A\x0D\x20]/", current($fileArray))) {
+    if(preg_match("/[^\x09\x0A\x0D\x20]/", current($fileArray), $match)) {
          $keep = TRUE;
-         break;
     } // End if statement
       
     // Deal with the line accordingly
@@ -100,7 +114,6 @@ function type1() {
     $keep = FALSE;
     
   } // End while loop                           
-  
   
   // Copy the array to a new one so the indexing is normal again
   foreach($fileArray as $v) {
@@ -125,22 +138,18 @@ function type1() {
     } // End if statement
     
     // Check for additional new paragraph markings: Multiple starting spaces
-    if(preg_match("/^ {3,}/", current($fileArray))) {
+    if(preg_match("/^[ ]{3,}/", current($fileArray))) {
       $tags[] = key($fileArray);
     } // End if statement
 
-    // Check for additional new paragraph markings:  - | -" | - " | -' | - '
-    if(preg_match("/-[ ]*(\'|\"|)[ \r]*$/", current($fileArray))) {
-      $tags[] = key($fileArray) + 1;
-    } // End if statement
-    
-    // Check for additional new paragraph markings:  . | ." | . " | .' | . '
-    if(preg_match("/\.[ ]*(\'|\"|)[ \r]*$/", current($fileArray))) {
+    // Check for additional new paragraph markings:  Period, dash, or other 
+    //          punctuation before a quote at end of line
+    if(preg_match("/(\.|-|\x97|\!|\?)[ ]*(\x60|\'|\"|)[ \r]*$/", current($fileArray))) {
       $tags[] = key($fileArray) + 1;
     } // End if statement
 
     // Check for additional new paragraph markings:  Quote at start of line
-    if(preg_match("/^(\'|\")/", current($fileArray))) {
+    if(preg_match("/^(\x60|\'|\")/", current($fileArray))) {
       $tags[] = key($fileArray);
     } // End if statement
     
@@ -157,72 +166,44 @@ function type1() {
   // newline characters), trim any whitespace from the start and end of each 
   // paragraph, and output the paragraph to a file.
   reset($fileArray);
+  $currentString = '';
   while(current($fileArray)) {
     
-    // Trim any whitespace from the start of the line
-    $currentString = preg_replace("/^\s*/", "", $currentString);
-    
     // Strip newlines
-    while(current($fileArray) && !in_array(key($fileArray), $tags)) {
-      //echo "RUN ME!!!!\n";
-      $currentString .= preg_replace("/\s*$/", " ", current($fileArray));
-      $currentString .= "@NO-TAG@";
-      next($fileArray);
-    } // End while loop
+    if(!in_array(key($fileArray), $tags)) {
+      
+      // Trim whitespace and format this section of the line
+      $currentString .= 
+          preg_replace("/^\s*(.+?)\s*$/", "$1 ", current($fileArray));
+      
+    // Complete paragraph  
+    } else {
+      
+      // Trim whitespace and format paragraph
+      $currentString = preg_replace("/^\s*(.+?)\s*$/", "\t$1\n\n", $currentString);
+      
+      // Append current string to output string
+      $fileString .= $currentString;
+      
+      $currentString = 
+          preg_replace("/^\s*(.+?)\s*$/", "$1 ", current($fileArray));
+
+    } // End if - else statements
     
-    // Trim whitespace and format paragraph
-    $currentString = preg_replace("/^\s*/", "\t", $currentString);
-    $currentString = preg_replace("/\s*$/", '\n', $currentString);
-    $currentString .= "@TAG@";
-    
-    // Append current string to output string
-    $fileString .= $currentString;
-    
-    $currentString = preg_replace("/\s*$/", ' ', current($fileArray));
-       
     next($fileArray);
     
   } // End while loop
   
   // Trim whitespace and format paragraph
-  $currentString = preg_replace("/^\s*/", "\t", $currentString);
-  $currentString = preg_replace("/\s*$/D", "", $currentString);
+  $currentString = preg_replace("/^\s*(.)/", "\t$1", $currentString);
+  $currentString = preg_replace("/(.)\s*$/", "$1", $currentString);
 
   $fileString .= $currentString;
-  //$fileString = fixUp($fileString);
+  $fileString = fixUp($fileString);
   
 } // End function type1()
 
-/* This function is for files in which each line is not ended by a newline.  In
- * other words, the paragraphs are already determined.  The only purpose of
- * this function is to indent and space the paragraphs.
- */
-function type2() {
-  
-  global $fileArray;
-  global $fileString;
-  
-  // Remove whitespace from each line, place a starting tab on each paragraph,
-  // and enter a newline between paragraphs.
-  reset($fileArray);
-  while(current($fileArray)) {
-    
-    // Find and replace whitespace
-    $fileArray[key($fileArray)] = preg_replace("/^\s*/", "\t", current($fileArray));
-    $fileArray[key($fileArray)] = preg_replace("/\s*$/D", "\n", current($fileArray));
-    
-    // Append current string to output string
-    $fileString .= current($fileArray);
-    
-    next($fileArray);
-    
-  } // End while loop
-  
-} // End function type2()
-
-/* Remove RTF style formatting.  In some situations, this will remove bits of
- * real text, such as {<format text>} <real text>.  The whole line will be
- * removed.
+/* Remove RTF style formatting.
  */
 function removeRTF() {
   
@@ -255,8 +236,8 @@ function removeRTF() {
 
 function fixUp($broken) {
   
-  // Fix double spaces, except after periods
-  $broken = preg_replace("/([^\.])  /", "$1 ", $broken);    
+  // Fix double (or more) spaces, except after periods
+  $broken = preg_replace("/([^\.])[ ]{2,}/", "$1 ", $broken);    
       
   // Break apart conversations that take place on one line (e.g. ...' '... or
   // ..." "...)
@@ -264,39 +245,22 @@ function fixUp($broken) {
     
   // Fix ellipses
   $broken = preg_replace("/[ ]?\.[ ]?\.[ \.]{0,5}/", '...', $broken);
+  
+  // Fix multiple spaces (not good gramatical form, but works fine for reading)
+//  $broken = preg_replace("/[ ]{2,}/", ' ', $broken);
+
+  // Replace single quotes with doubles, except for cases like "don't"
+//  $broken = preg_replace("/([\x09\x20])\x27/", "$1\x22", $broken);
+//  $broken = preg_replace("/\x27([\x20\x0A])/", "\x22$1", $broken);
 
   // Fix places where ellipses and quotes have no spacing before the next word
-  $fixed = preg_replace("/(\.\.\.)(\w)/", "$1  $2", $broken);
+//  $fixed = preg_replace("/(\.\.\.|[ ]*\'|[ ]*\")(\w)/", "$1  $2", $broken);
         
-  return $fixed;
+  return $broken;
+//  return $fixed;
   
 } // End function fixUp()
         
-function ASCII() {
-  
-  global $fileArray;
-  global $fp1;
-  
-  // Preform ASCII conversion using values of all program arguements beyond 4  
-  
-} // End function ASCII()
-
-function detectQuoteErrors() {
-
-  global $fileArray;
-  global $fp1;
-
-
-} // End function fixQuotes()
-
-function detectSeperators() {
-  
-  global $fileArray;
-  global $fp1;
-  
-  
-} // End function detectSeperators()
-
 /* Output the final product, $fileString, to the file opened earlier.
  */
 function outputToFile() {

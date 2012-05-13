@@ -1,21 +1,48 @@
-eBookFormatter version 1.2.6
+eBookFormatter version 1.3.0
 ----------------------------
+By Eric Shields
+
+WARNING!
+--------
+
+This is a free-time project I am pursuing in addition to full time work (or classes, depending on the time of year).  As such I do not have time to preform exahustive testing of each release.  Do not expect perfect preformance!  Some rare file setups may result in a worse formatting than the origional.  BE SURE TO BACKUP YOUR FILE(S) BEFORE USING THIS SOFTWARE, AS IT IS IMPOSSIBLE TO UNDO ANY CHANGES!
+
+That said, if used properly, the program should not overwrite the origional file, but I have to protect myself from stupid people now don't I?  Right, on to the real information!
 
 What is eBookFormatter?
 -----------------------
 
 eBookFormatter is a program dedicated to the task of fixing those pesky formatting issues present in a great deal of online text documents, eBooks in text or RTF format, files converted from PDFs, and OCR (Optical Character Recognition, a popular method of retrieving text from PDF and image files) created documents, as well as anything similar in form.
 
-eBookFormatter will allow you to easily convert RTF to plain text for easy editing (or if you don't have an RTF editor), and provide many features related to the resulting text.  Perhaps you used an OCR on a PDF document, and the result was a text file with a line terminator (a newline, carriage return, or both) at the end of every line, preventing you from using formats like justification.  eBookFormatter will strip them away, leaving the text only terminated at the end of each paragraph.
+eBookFormatter will allow you to convert RTF to plain text for editing (if you don't have an RTF editor, or just like plain text better), and provide many features related to the resulting text.  Perhaps you used an OCR on a PDF document, and the result was a text file with a line terminator (a newline, carriage return, or both) at the end of every line, preventing you from using formats like justification.  eBookFormatter will strip them away, leaving the text only terminated at the end of each paragraph.
 
 eBookFormatter also includes a sophisticated method of detecting paragraphs, which is approximately 95% accurate in typical text documents, the ability to correct common errors produced by OCR, and much more.
+
+Features
+--------
+
+* Sophisticated paragraph detection algorithm - Creates easy to follow paragraph
+  setup:  A single blank line seperates paragraphs and the first line of each is 
+  indented.
+* Correction of simple OCR related mistakes
+  - erratic ellipses (...), including the replacing the single-character version 
+    with three periods
+  - Fix some spacing issues after quotes and ellipses
+* Seperation of dialog segments based on quote locations
+* Removal of extraneous blank lines
+* Detection of numerated lists
+* Removal of inter-paragraph newlines to allow for easy formatting (like 
+  justification)
+* Removal of RTF formatting, resulting in plain text version (Currently minimal 
+  functionality)
+* Many more to come!!
 
 Installing eBookFormatter
 -------------------------
 
 eBookFormatter is written in PHP 5.  As such, it can be run on any platform (operating system and hardware independant), but it requires that you have PHP 5 or higher installed on your PC.  The installation is simple:  Visit www.php.net/downloads.php, select the appropriate file, and follow the installation instructions.  
 
-The windows zip package need only be unzipped and the directory containing php.exe added to the PATH environment variable (START  -> right click My Computer -> Properties -> Advanced -> Environment Variables -> select Path and click edit -> type a semicolon followed by the directory path containing php.exe).  Note:  Adding to the PATH variable is not required but will allow you to run a php program from anywhere on the PC by typing PHP <file to run>.  The above method is only garunteed for Windows XP.  For other windows systems, consult the (really really bad) user guide for the location of the PATH variable.
+The windows zip package need only be unzipped and the directory containing php.exe added to the PATH environment variable (START  -> right click My Computer -> Properties -> Advanced -> Environment Variables -> select Path and click edit -> type a semicolon followed by the directory path containing php.exe).  Note:  Adding to the PATH variable is not required but will allow you to run a php program from anywhere on the PC by typing PHP <file to run>.  The above method is only garunteed for Windows XP Professional.  For other windows systems, consult the (really really bad) user guide for the location of the PATH variable.  IF YOU DO NOT FEEL COMFORTABLE EDITING WINDOWS SETTINGS, DO NOT ALTER YOUR PATH VARIABLE!  Simply use full directory paths when running php.  For example, from the directory containing php.exe type: PHP <full directory path of the file to run>.
 
 Using eBookFormatter
 --------------------
@@ -24,28 +51,28 @@ eBookFormatter is a command-line based program.
 
 Usage:  php eBookFormatter.php <input file> <output file> <integer value of function to run>
 
-The integer values are currently 1, 2, or 3.  
+The integer values are currently 1 or 2.  
 
-Function 1: Assumes <input file> is in plain text format.  This function will read in the file and remove any blank lines.  It will determine the location of paragraphs and tag them.  Then it will preform a series of simple corrections to the text based on common errors in eBook style text documents.  Next the end of line terminators are removed.  Any extra whitespace at the start or end of the paragraph is removed, the paragraph is terminated with two newlines (causing a blank line to be inserted) and the beginning of the paragraph is indented with one tab.  The resulting text is then output to <output file>
+Function 1: Assumes <input file> is in plain text format.  This function will preform all the features listed above, except for the removal of the RTF formatting, which is covered by function 2.
 
-Function 2:  Further testing is required, but it is believed that function 2 is currently defunct, replaced by functionality of function 1.
-
-Function 3:  Attempts to remove all RTF formatting in a file.  Still in it's alpha stages, this function may result in some loss of data due to the methods certain programs add the formatting.  The loss of data should be minimal (part of a line in uncommon conditions).  Additionally, the resulting text is very poorly formatted.  It is recommended that function 1 be run following RTF formatting removal.  Until more development is done, use this function at your own risk.
+Function 2:  Attempts to remove all RTF formatting in a file.  Still in it's alpha stages, this function may result in some loss of data due to the methods certain programs use to add the formatting.  The loss of data should be minimal (part of a line in uncommon conditions).  Additionally, the resulting text is very poorly formatted.  It is recommended that function 1 be run following RTF formatting removal.
 
 Support
 -------
 
-This is freeware.  As such, I am not in any way required to support the software.  However, bug reports, suggestions, and comments are welcome.  If I am able to do so, I will make additions, improvements, and fixes as time goes on.
+This is freeware.  As such, I am not in any way required to support the software.  However, bug reports, suggestions, and comments are welcome.  If I am able to do so, I will make additions, improvements, and fixes as time goes on.  See the end of this file for contact information.
 
 Uninstalling eBookFormatter
 ---------------------------
 
-As no installation is required, no uninstallation is required.  Simply delete the folder containing the eBookFormatter files.
+As no installation is required, no uninstallation is required.  Simply delete the folder containing the eBookFormatter files. (Or just delete the files related to eBookFormatter).  
+
+If you added the PHP folder to your windows PATH variable, you may wish to remove it now.  If so, follow the steps listed under Installing eBookFormatter and remove the semicolon and directory path you added above.
 
 Lisence Agreement
 -----------------
 
-This software is released under the GNU GPL (General Public Lisence) and is free to use, modify, and distribute so long as a complete copy of the lisence agreement is provided with the software.
+This software is released under the GNU GPL (General Public Lisence) and is free to use, modify, and distribute so long as a complete copy of the lisence agreement is provided with the software.  See COPYING.txt for the full GPL.
 
 Donations
 ---------
@@ -57,5 +84,8 @@ All donations will be put towards removing obticles preventing me from furtherin
 Contact Information
 -------------------
 
-Copyright 2005 by Eric Shields
 cold_candor@hotmail.com
+https://sourceforge.net/projects/ebookformat
+
+
+Copyright 2005 Eric Shields

@@ -1,6 +1,11 @@
 eBookFormatter Release Notes
 ----------------------------
 
-Version 1.2.6
+Version 1.3.0
 
-Initial release.  See README.txt for further information.
+  - Initial Release - This version gives stable (read consistant) but sometimes 
+    unfavorable results.  Check back frequently for updates.
+  - While this version includes an RTF formatting removal tool, it is still very crude 
+    and leaves very poorly formatted plain text.  Many improvements are planned for 
+    furutre releases.
+  - See README.txt and ChangeLog.txt for more information.
