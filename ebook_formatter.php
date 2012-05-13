@@ -10,6 +10,8 @@ include 'ASCII.php';
  * TODO: Fix things like bad ellipses
  * IDEA: Detect mismatched quotes
  * IDEA: Detect seperators (like a line of dashes, ****, or multiple blank lines)
+ * IDEA: Remove email-style reply inserts (like > at the start of each line)
+ * TODO: Move file output to a seperate function call
  */
 
 // Output a blank line for readability
@@ -18,31 +20,38 @@ echo "\n";
 // Input error checking and file setup.
 if(count($argv) != 4 && $argv[3] != 4) {
   exit("Usage:  php eBookFormatter.php <Input File> <Output File> <function>\n" . 
-       "If function 4 is selected, enter ASCII arguements as per ASCII.php as well.\n\n");
+       "If function 4 is selected, enter ASCII arguements as per ASCII.php as well.\n");
 } else if(!$fileArray = file($argv[1])) {
   exit("Fatal Error:  Could not open input file ($argv[1])!\n\n");
 } else if(!$fp1 = fopen($argv[2], 'w')) {
   exit("Fatal Error:  Could not open output file ($argv[2])!\n\n");
 } // End if - else if statements
 
+// Initialize output string
+$fileString = '';
+
 switch($argv[3]) {
   case 1:
     type1();
+    outputToFile();
     break;
   case 2:
     type2();
+    outputToFile();
     break;
   case 3:
     removeRTF();
+    outputToFile();
     break;
   case 4:
     ASCII();
+    outputToFile();
     break;
   default:
   
     // Close output file and error out of program.
     fclose($fp1);  
-    exit("Error:  Function select value must be in the range of 1 to 3\n\n");
+    exit("Error:  Function select value must be in the range of 1 to 4\n\n");
     
     break;
     
@@ -51,7 +60,7 @@ switch($argv[3]) {
 function type1() {
   
   global $fileArray;
-  global $fp1;
+  global $fileString;
   
   // Establish tags - essentially new paragraghs.
   reset($fileArray);
@@ -80,45 +89,47 @@ function type1() {
   reset($fileArray);
   while(current($fileArray)) {
     
-    $fileString = '';
+    $currentString = '';
     
     // Strip newlines
     while(current($fileArray) && !array_search(key($fileArray), $tags)) {
-      $fileString .= preg_replace("/[\n\r]+/", ' ', current($fileArray));
+      $currentString .= preg_replace("/[\n\r]+/", ' ', current($fileArray));
       next($fileArray);
     } // End while loop
   
     // Trim whitespace and format paragraph
-    $fileString = preg_replace("/^\s*/", "\t", $fileString);
-    $fileString = preg_replace("/\s*$/D", "\n", $fileString);
+    $currentString = preg_replace("/^\s*/", "\t", $currentString);
+    $currentString = preg_replace("/\s*$/D", "\n", $currentString);
     
-    // Output formatted string to output file
-    fputs($fp1, $fileString);
+    // Append current string to output string
+    $fileString .= $currentString;
     
     next($fileArray);
     
   } // End while loop
-  
-  fclose($fp1);
   
 } // End function type1()
 
 function type2() {
   
   global $fileArray;
-  global $fp1;
+  global $fileString;
   
   // Remove whitespace from each line, place a starting tab on each paragraph,
   // and enter a newline between paragraphs.
   reset($fileArray);
   while(current($fileArray)) {
+    
+    // Find and replace whitespace
     $fileArray[key($fileArray)] = preg_replace("/^\s*/", "\t", current($fileArray));
     $fileArray[key($fileArray)] = preg_replace("/\s*$/D", "\n", current($fileArray));
-    fputs($fp1, current($fileArray));
+    
+    // Append current string to output string
+    $fileString .= current($fileArray);
+    
     next($fileArray);
+    
   } // End while loop
-  
-  fclose($fp1);
   
 } // End function type2()
 
@@ -127,7 +138,7 @@ function removeRTF() {
   global $fileArray;
   global $fp1;
   
-  // TODO: Remove RTF formatting
+  // Remove RTF formatting
   
 } // End function removeRTF()
 
@@ -136,8 +147,47 @@ function ASCII() {
   global $fileArray;
   global $fp1;
   
-  // TODO: Preform ASCII conversion using values of all program arguements beyond 4  
+  // Preform ASCII conversion using values of all program arguements beyond 4  
   
 } // End function ASCII()
+
+function fixUp() {
+  
+  global $fileArray;
+  global $fp1;
+  
+  reset($fileArray);
+  while(current($fileArray)) {
+    $fileArray[key($fileArray)] = 
+        preg_replace("/[ ]\.[ ]\.[ ][\.][ ][\.*]/", '...', current($fileArray));
+  } // End while loop
+  
+} // End function fixUp()
+
+function detectQuoteErrors() {
+
+  global $fileArray;
+  global $fp1;
+
+
+} // End function fixQuotes()
+
+function detectSeperators() {
+  
+  global $fileArray;
+  global $fp1;
+  
+  
+} // End function detectSeperators()
+
+function outputToFile() {
+  
+  global $fp1;
+  global $fileString;
+
+  fputs($fp1, $fileString);
+  fclose($fp1);
+  
+} // End function outputToFile()
 
 ?>
