@@ -1,6 +1,6 @@
 <?php
 
-$version = "1.5.0";
+$version = "1.5.5";
 $copyright = "2005 Eric Shields";
 
 /**  This program is free software; you can redistribute it and/or modify
@@ -24,8 +24,12 @@ $copyright = "2005 Eric Shields";
 // Output a blank line for readability
 echo "\n";
 
-// Initialize the variable used in preg_match so the parser will stop complaining
+// Initialize the variable used in preg_match so the parser will stop 
+// complaining
 $match = '';
+
+// Initialize the output string to ensure nothing wierd happens
+$fileString = '';
 
 // Check that at least the input file is given
 if($argc == 1) {
@@ -40,10 +44,15 @@ if($argc == 1) {
 // [-f <firstFunction[,secondFunction[,thirdFunction[,...]]]>] // Function(s) to 
 //          preform.  PREFORMED IN THE ORDER LISTED!
 // [-v] // Do not append formatter ID at top of file
+// [-h] // If 100 is specifies as one of the functions, this tells the program
+//         to output the results in HTML format.  If 100 is not present, this 
+//         flag is ignored.
 //
 $oFlag = FALSE;
 $fFlags = array();
 $vFlag = FALSE;
+$hFlag = FALSE;
+$ext = 'txt';
 
 // Parse the command line arguements. This should ignore the first arguement,
 // which is the program name.
@@ -55,7 +64,7 @@ for($i = 1; $i < $argc; $i++) {
     
     case 'i':
     
-      if(!$inputString = file_get_contents($argv[$i + 1])) {
+      if(!$fileString = file_get_contents($argv[$i + 1])) {
         exit("Fatal Error(eBookFormatter.php):  Could not open input file (" . 
              $argv[$i + 1] . ")!\n");
       } // End if statement
@@ -91,9 +100,16 @@ for($i = 1; $i < $argc; $i++) {
       $vFlag = TRUE;
     
       break;
+    case 'h':
+    
+      $hFlag = TRUE;
+      $ext = 'htm';
+    
+      break;
     default:
     
-      fprintf(STDERR, "\nWarning!  Unrecognized switch (%s), ignoring.\n", $argv[$i]);
+      fprintf(STDERR, "\nWarning!  Unrecognized switch (%s), ignoring.\n", 
+              $argv[$i]);
       
       break;
   } // End switch statement
@@ -102,15 +118,25 @@ for($i = 1; $i < $argc; $i++) {
   
 } // End foreach loop
 
-// Initialize output string
-if(!$vFlag) {
-  $fileString = "{Automatically formatted using eBookFormatter v" . $version . "\n"
-                . " Copyright " . $copyright . "}\n\n";
-} else {
+// Check if this run is to run the testSuite.  The -o switch must be enabled.
+if($fFlags[100] && $oFlag) {
   
-  $fileString = '';
+  testSuite($fp1, $hFlag);
   
-} // End if - else statement
+} else if($fFlags[100] && !$oFlag) {
+  
+  fprintf(STDERR, "\nWarning!  TestSuite function selected with no output file!"
+                  . "  Outputting to file %s\\\\testOutput.%s.\n\n", getcwd(), 
+                  $ext);
+                  
+  if(!$fp1 = fopen("testOutput.$ext", 'w')) {
+    exit("Fatal Error(eBookFormatter.php):  Could not open output file " .
+         "(testOutput.$ext)!\n");
+  } // End if statement
+                  
+  testSuite($fp1, $hFlag);
+
+} // End if - else if statments
 
 // Preform the functions selected, in the order listed on the command line
 reset($fFlags);
@@ -120,32 +146,27 @@ foreach($fFlags as $f) {
     
     switch(key($fFlags)) {
       case 1:
-        doParagraphs();
+        $fileString = doParagraphs($fileString);
         break;
       case 2:
-        removeRTF();
+        $fileString = removeRTF($fileString);
         break;
       case 3:
-        fixEllipses();
+        $fileString = fixEllipses($fileString);
         break;
       case 4:
-        fixSentenceSpacing();
+        $fileString = fixSentenceSpacing($fileString);
         break;
       case 5:
-        splitConversation();
+        $fileString = splitConversation($fileString);
         break;
       case 6:
-        fixSingleQuotes();
+        $fileString = fixSingleQuotes($fileString);
         break;
       default:
       
-        // Close output file and error out of program.
-        if($oFlag) {
-          fclose($fp1);
-        } // End if statement
-        exit("Fatal Error(eBookFormatter.php):  Invalid function selected (" .
-             (key($fFlags)) . ")!\n");
-        
+        fprintf(STDERR, "\nWarning!  Unrecognized function (%d), ignoring.\n", 
+              key($fFlags));        
         break;
         
     } // End switch statement
@@ -156,31 +177,29 @@ foreach($fFlags as $f) {
   
 } // End foreach loop
 
-outputToFile();
+outputToFile($fp1, $fileString, $oFlag, $vFlag, $version, $copyright);
 
 /////////// End main "method"
   
-/* The heart of the program, this function will detect and seperate the paragraphs
- * in the file.  A blank line will be inserted inbetween and the start of each 
- * will be indented.  This method will remove the newlines at the end of each
- * line.
+/* The heart of the program, this function will detect and seperate the 
+ * paragraphs in the file.  A blank line will be inserted inbetween and the 
+ * start of each will be indented.  This method will remove the newlines at the 
+ * end of each line.
  */
-function doParagraphs() {
+function doParagraphs($ickyString) {
   
-  global $fileArray;
-  global $fileString;
-  global $inputString;
   $tags = array();
   $keep = FALSE;
   $match = '';
   
   // Create the line array
-  $fileArray = preg_split("/[\n\r]+/", $inputString);
+  $fileArray = preg_split("/[\n\r]+/", $ickyString);
   
   // Check if the file split into lines correctly
   foreach($fileArray as $v) {
     if(preg_match("/[\n\r]+/", $v)) {
-      exit("Fatal Error(eBookFormatter.php):  Split did not preform correctly!\n");
+      exit("Fatal Error(eBookFormatter.php):  Split did not preform" . 
+      "correctly!\n");
     } // End if statement
   } // End foreach loop
 
@@ -239,7 +258,8 @@ function doParagraphs() {
 
     // Check for additional new paragraph markings:  Period, dash, or other 
     //          punctuation before a quote at end of line
-    if(preg_match("/(\.|-|\x97|\!|\?)[ ]*(\x60|\'|\"|)[ \r]*$/", current($fileArray))) {
+    if(preg_match("/(\.|-|\x97|\!|\?)[ ]*(\x60|\'|\"|)[ \r]*$/", 
+        current($fileArray))) {
       $tags[] = key($fileArray) + 1;
     } // End if statement
 
@@ -275,10 +295,11 @@ function doParagraphs() {
     } else {
       
       // Trim whitespace and format paragraph
-      $currentString = preg_replace("/^\s*(.+?)\s*$/", "\t$1\n\n", $currentString);
+      $currentString = preg_replace("/^\s*(.+?)\s*$/", "\t$1\n\n", 
+                       $currentString);
       
       // Append current string to output string
-      $fileString .= $currentString;
+      $cleanString .= $currentString;
       
       $currentString = 
           preg_replace("/^\s*(.+?)\s*$/", "$1 ", current($fileArray));
@@ -286,6 +307,8 @@ function doParagraphs() {
     } // End if - else statements
     
     next($fileArray);
+    
+    return $cleanString;
     
   } // End while loop
   
@@ -297,12 +320,23 @@ function doParagraphs() {
   
 } // End function type1()
 
-/* Remove RTF style formatting.
+/* Remove RTF style formatting.  This function preserrves line terminators.
  */
-function removeRTF() {
+function removeRTF($rtfString) {
   
-  global $fileArray;
-  global $fileString;
+  // Create the line array
+  $fileArray = preg_split("/([\n\r]+)/", $rtfString, -1, 
+        "PREG_SPLIT_DELIM_CAPTURE");
+        
+  print_r($fileArray);
+  
+  // Check if the file split into lines correctly
+  foreach($fileArray as $v) {
+    if(preg_match("/[\n\r]+/", $v)) {
+      exit("Fatal Error(eBookFormatter.php):  Split did not preform" . 
+      "correctly!\n");
+    } // End if statement
+  } // End foreach loop
   
   reset($fileArray);
   while(current($fileArray)) {
@@ -319,12 +353,14 @@ function removeRTF() {
     $fileArray[key($fileArray)] = 
         preg_replace("/^\\\\.*$/", '', current($fileArray));
 
-    // Add current string to final one
-    $fileString .= current($fileArray);
+    // Add current string to final one and preserve line terminators
+    $ptString .= current($fileArray);
     
     next($fileArray);
     
   } // End while loop
+  
+  return $ptString;
   
 } // End function removeRTF()
 
@@ -357,22 +393,25 @@ function fixSentenceSpacing($broken) {
     
       if($pieces[4] != '') {
       
-        // If there's a quote and a space occurs after it, assume the quote is part
-        // of the current sentence and insert 2 spaces after it
-        $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1$3  ", $broken, 1);
+        // If there's a quote and a space occurs after it, assume the quote is 
+        // part of the current sentence and insert 2 spaces after it
+        $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1$3  ", 
+              $broken, 1);
         
       } else {
         
-        // If there's a quote and no space occurs after it, assume the quote is part
-        // of the next sentence and insert 2 spaces before it
-        $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1  $3", $broken, 1);
+        // If there's a quote and no space occurs after it, assume the quote is 
+        // part of the next sentence and insert 2 spaces before it
+        $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1  $3", 
+              $broken, 1);
         
       } // End if - else statements
       
     } else {
       
       // If there is no quote, then ignore the current spaces and insert 2
-      $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1  ", $broken, 1);
+      $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1  ", $broken, 
+              1);
         
     } // End if - else statments
     
@@ -397,9 +436,10 @@ function splitConversation($broken) {
   
 } // End function splitConversation()
 
-/* Some files will have single quotes where there should be doubles, this function
- * will fix those places.  NOTE:  Occurances of quotes within quotes (to denote
- * someone quoting someone else, for example) will be replaced with double quotes.
+/* Some files will have single quotes where there should be doubles, this 
+ * function will fix those places.  NOTE:  Occurances of quotes within quotes 
+ * (to denote someone quoting someone else, for example) will be replaced with 
+ * double quotes.
  */
 function fixSingleQuotes($broken) {
 
@@ -411,14 +451,28 @@ function fixSingleQuotes($broken) {
   
 } // End function fixSingleQuotes()
 
+/* This function tests each individual feature of the program and outputs a 
+ * summary either to an html document or a plain text document, based on the -h
+ * option.  This function exits the code.
+ */
+function testSuite($fp, $hFlag) {
+  
+  fclose($fp);
+  
+  exit("TestSuite finished, exiting program.");
+  
+} // End function testSuite()
+
 /* Output the final product, $fileString, to the file opened earlier or to 
  * Standard Out.
  */
-function outputToFile() {
+function outputToFile($fp1, $fileString, $oFlag, $vFlag, $version, $copyright) {
   
-  global $fp1;
-  global $fileString;
-  global $oFlag;
+// Append the version info to the start of the file
+if(!$vFlag) {
+  $fileString = "{Automatically formatted using eBookFormatter v" . $version . 
+                "\n". " Copyright " . $copyright . "}\n\n" . $fileString;
+} // End if statement
 
   if($oFlag) {
     fputs($fp1, $fileString);
