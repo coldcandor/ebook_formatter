@@ -25,3 +25,11 @@ Version 1.5.5
   - Switched from using global variables to using passed and returned 
     parameters.
   - Fixed the issue where the RTF formatter would remove all newlines.
+  
+Version 1.6.0
+
+  - Fleshed out the testSuite function and moved it to it's own file (no change
+    in the way that it's invoked)
+  - Added a css stylesheet that the HTML output option of the testSuite uses
+  - Fixed many many bugs for functions 4, 5, and 6.
+  - Modified the numbered list detection to accept leading spaces

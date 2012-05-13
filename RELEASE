@@ -1,5 +1,5 @@
-eBookFormatter Release Notes
-----------------------------
+Release Notes
+-------------
 
 See README.txt and ChangeLog.txt for more information.
 
@@ -29,3 +29,9 @@ Version 1.5.5
     the new testSuite function.
   - The testSuite function currently does nothing.
   
+Version 1.6.0
+
+  - Many changes and additions were made this version, but there are NO changes
+    in the interface.
+  - There are two additional files thies release:  testSuite.php and 
+    testSuite.css.  

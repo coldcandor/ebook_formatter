@@ -1,9 +1,12 @@
-eBookFormatter version 1.5.5
+eBookFormatter Version 1.6.0
 ----------------------------
+Copyright 2005 
 By Eric Shields
 
 WARNING!
 --------
+
+First and foremost... In today's world this is a very necessary statement:  THE AUTHOR OF THIS CODE IS NOT RESPONSIBLE FOR THE MATERIAL UPON WHICH IT IS USED!
 
 This is a free-time project I am pursuing in addition to full time work (or classes, depending on the time of year).  As such I do not have time to preform exahustive testing of each release.  Do not expect perfect preformance!  Some rare file setups may result in a worse formatting than the origional.  BE SURE TO BACKUP YOUR FILE(S) BEFORE USING THIS SOFTWARE, AS IT IS IMPOSSIBLE TO UNDO ANY CHANGES!
 
@@ -25,8 +28,7 @@ Features
   setup:  A single blank line seperates paragraphs and the first line of each is 
   indented.
 * Correction of simple OCR related mistakes
-  - erratic ellipses (...), including the replacing the single-character version 
-    with three periods
+  - erratic ellipses (...)
   - Sentence spacing issues
 * Seperation of dialog segments based on quote locations
 * Removal of extraneous blank lines
@@ -37,6 +39,7 @@ Features
 * Switch-based command line interface for easy option choosing
 * Modulaized features, allowing you complete control over what formatting is
   preformed
+* Built-in testSuite, so you can see for yourself that it's working correctly
 * Many more to come!!
 
 Installing eBookFormatter
@@ -53,7 +56,7 @@ eBookFormatter is a command-line based program.
 
 --- Usage ---  
 
-php eBookFormatter.php -i <inputFile> [-o <outputFile>] [-f <firstFunction>[,<secondFunction>[,<thirdFunction>[,<...>]]]] [-v]
+php eBookFormatter.php -i <inputFile> [-o <outputFile>] [-f <firstFunction>[,<secondFunction>[,<thirdFunction>[,<...>]]]] [-v] [-h]
 
 --- Command line switch descriptions ---
 
@@ -88,9 +91,9 @@ Function 3: Corrects many issues with ellipses, such as extra spaces or extra pe
 
 Function 4: Converts all instances of more than 2 spaces to 1 space and searches for places where it should be returned to 2 spaces.  Checks for extra spaces between punctuation marks and quotes. (For example . " would be converted to .")
 
-Function 5: Splits conversations that occur in one paragraph into seperate paragraphs in cases where an ending quote is followed immediately by an opening quote.  (For example ..."  "...)
+Function 5: Splits conversations that occur in one paragraph into seperate paragraphs in cases where an ending quote is followed immediately by an opening quote.  (For example, ..."  "...)
 
-Function 6: Attempts to locate all instances of a single quote (') that are not part of a contraction, and replace them with double quotes (").  This function is only partially finished.
+Function 6: Attempts to locate all instances of a single quote (') that are not part of a contraction or colloquial speach, and replace them with double quotes (").
 
 Function 100: Run the testSuite.  This will preform a series of tests, compare the results to expected results, and output a summary in either text or html format, based on whether the -h switch is active.
 
@@ -123,6 +126,3 @@ Contact Information
 
 cold_candor@hotmail.com
 https://sourceforge.net/projects/ebookformat
-
-
-Copyright 2005 Eric Shields

@@ -1,6 +1,6 @@
 <?php
 
-$version = "1.5.5";
+$version = "1.6.0";
 $copyright = "2005 Eric Shields";
 
 /**  This program is free software; you can redistribute it and/or modify
@@ -18,7 +18,10 @@ $copyright = "2005 Eric Shields";
  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+include 'testSuite.php';
+ 
 /* Problems and Ideas not written up in Tasks:
+ *   Correct sentence spacing around dashes, commas, and after ellipses
  */
 
 // Output a blank line for readability
@@ -34,7 +37,8 @@ $fileString = '';
 // Check that at least the input file is given
 if($argc == 1) {
   exit("Usage:  php eBookFormatter.php -i <inputFile> [-o <outputFile>] " . 
-       "[-f <firstFunction[,secondFunction[,thirdFunction[,...]]]>] [-v]\n");
+       "[-f <firstFunction[,secondFunction[,thirdFunction[,...]]]>] [-v] " .
+       "[-h]\n");
 } // End if statement
 
 // Command line arguements:
@@ -89,7 +93,7 @@ for($i = 1; $i < $argc; $i++) {
       $formats = explode(',', $argv[$i + 1]);
       
       foreach($formats as $f) {
-        $fFlags[$f] = TRUE;
+        $fFlags[] = $f;
       } // End foreach loop
       
       $i++;
@@ -119,11 +123,11 @@ for($i = 1; $i < $argc; $i++) {
 } // End foreach loop
 
 // Check if this run is to run the testSuite.  The -o switch must be enabled.
-if($fFlags[100] && $oFlag) {
+if(in_array(100, $fFlags) && $oFlag) {
   
   testSuite($fp1, $hFlag);
   
-} else if($fFlags[100] && !$oFlag) {
+} else if(in_array(100, $fFlags) && !$oFlag) {
   
   fprintf(STDERR, "\nWarning!  TestSuite function selected with no output file!"
                   . "  Outputting to file %s\\\\testOutput.%s.\n\n", getcwd(), 
@@ -142,41 +146,37 @@ if($fFlags[100] && $oFlag) {
 reset($fFlags);
 foreach($fFlags as $f) {
 
-  if($f) {
+  switch($f) {
+    case 1:
+      $fileString = doParagraphs($fileString);
+      break;
+    case 2:
+      $fileString = removeRTF($fileString);
+      break;
+    case 3:
+      $fileString = fixEllipses($fileString);
+      break;
+    case 4:
+      $fileString = fixSentenceSpacing($fileString);
+      break;
+    case 5:
+      $fileString = splitConversation($fileString);
+      break;
+    case 6:
+      $fileString = fixSingleQuotes($fileString);
+      break;
+    default:
     
-    switch(key($fFlags)) {
-      case 1:
-        $fileString = doParagraphs($fileString);
-        break;
-      case 2:
-        $fileString = removeRTF($fileString);
-        break;
-      case 3:
-        $fileString = fixEllipses($fileString);
-        break;
-      case 4:
-        $fileString = fixSentenceSpacing($fileString);
-        break;
-      case 5:
-        $fileString = splitConversation($fileString);
-        break;
-      case 6:
-        $fileString = fixSingleQuotes($fileString);
-        break;
-      default:
+      // Close output file and error out of program.
+      if($oFlag) {
+        fclose($fp1);
+      } // End if statement
+      exit("Fatal Error(eBookFormatter.php):  Invalid function selected " .  
+           "($f)!\n");
       
-        // Close output file and error out of program.
-        if($oFlag) {
-          fclose($fp1);
-        } // End if statement
-        exit("Fatal Error(eBookFormatter.php):  Invalid function selected (" .
-             (key($fFlags)) . ")!\n");
-        
-        break;
-        
-    } // End switch statement
-    
-  } // End if statement
+      break;
+      
+  } // End switch statement
   
   next($fFlags);
   
@@ -276,8 +276,8 @@ function doParagraphs($ickyString) {
       $tags[] = key($fileArray);
     } // End if statement
     
-    // Check for additional new paragraph markings:  Numerated line
-    if(preg_match("/^\d+\./", current($fileArray))) {
+    // Check for additional new paragraph markings:  Numbered list
+    if(preg_match("/[\s]*\d+\./", current($fileArray))) {
       $tags[] = key($fileArray);
     } // End if statement    
 
@@ -381,7 +381,7 @@ function removeRTF($rtfString) {
 function fixEllipses($broken) {
 
   // Fix ellipses
-  $fixed = preg_replace("/[ ]?\.[ ]?\.[ \.]{0,5}/", '...  ', $broken);
+  $fixed = preg_replace("/[ ]?\.[ \.]*\./", '...', $broken);
   
   return $fixed;
   
@@ -397,39 +397,49 @@ function fixSentenceSpacing($broken) {
   // Replace all instances of 2 or more spaces with 1
   $broken = preg_replace("/[ ]{2,}/", " ", $broken);
   
-  $fileArray = preg_split("/([\.\!\?\:-][ ]?[\'\"]?[ \w\n\r]?)/", $broken, -1, 
-            PREG_SPLIT_DELIM_CAPTURE);
+  $fileArray = preg_split("/([\.\!\?\:-][ ]?[\'\"]?[ \w\n\r]{0,3})/", $broken, 
+              -1, PREG_SPLIT_DELIM_CAPTURE);
   
   // Fix spacing after punctuation marks
   for($i = 0; $i < count($fileArray); $i++) {
     
-    preg_match("/(\.|\!|\?|\:)( )?(\'|\")?([ \w\n\r]*)/", $fileArray[$i], 
+    preg_match("/(\.|\!|\?|\:)( )?(\'|\")?( )?([\w\n\r]{0,3})/", $fileArray[$i], 
               $pieces);
   
-    if(preg_match("/[\n\r]+/",$pieces[4])) {
+    if(preg_match("/[\n\r]+/",$pieces[5])) {
+      
+      // Any time that it ends in a newline character, ignore all the spaces
+      $fileArray[$i] = 
+                preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?([\w\n\r]{0,3})/", 
+                "$1$3$5", $fileArray[$i]);
+                      
+    } else if($pieces[4] && preg_match("/\w/",$pieces[5])) {
+      
+      // If it end in a space followed by a word character, assume the 
+      $fileArray[$i] = 
+                preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?([\w\n\r]{0,3})/", 
+                "$1$3  $5", $fileArray[$i]);
+      
+    } else if($pieces[2] && !$pieces[4] && preg_match("/\w/",$pieces[5])) {
       
       // If there's a quote and a space occurs after it, assume the quote is 
       // part of the current sentence and insert 2 spaces after it
-      $fileArray[$i] = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?([ \w\n\r]*)/", 
-                "$1$3$4", $fileArray[$i]);
-      
-    } else if(preg_match("/\w/",$pieces[4]) && 
-              !preg_match("/ \w/",$pieces[4])) {
-      
-      // If there's a quote and a space occurs after it, assume the quote is 
-      // part of the current sentence and insert 2 spaces after it
-      $fileArray[$i] = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?([ \w\n\r]*)/", 
-                "$1$3  $4", $fileArray[$i]);
-      
-    } else if(preg_match("/ \w/",$pieces[4])) {
-      
-      // If there's a quote and a space occurs after it, assume the quote is 
-      // part of the current sentence and insert 2 spaces after it
-      $fileArray[$i] = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?([ \w\n\r]*)/", 
-                "$1  $3$4", $fileArray[$i]);
+      $fileArray[$i] = 
+                preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?([\w\n\r]*)/", 
+                "$1  $3$5", $fileArray[$i]);
 
-    } // End if - else - if statements      
+    } else if(!$pieces[2] && !$pieces[4] && preg_match("/\w/",$pieces[5])) {
+      
+      // If there's a quote and a space occurs after it, assume the quote is 
+      // part of the current sentence and insert 2 spaces after it
+      $fileArray[$i] = 
+                preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?([\w\n\r]*)/", 
+                "$1$3  $5", $fileArray[$i]);
+
+    } // End if - else if statements      
     
+    $pieces = '';
+
   } // End for loop
   
   foreach($fileArray as $v) {
@@ -450,7 +460,7 @@ function splitConversation($broken) {
 
   // Break apart conversations that take place on one line (e.g. ...' '... or
   // ..." "...)
-  $fixed = preg_replace("/(\'|\")[ ]+(\'|\")/", "$1\n$2", $broken);
+  $fixed = preg_replace("/(\'|\")[ ]*(\'|\")/", "$1\n$2", $broken);
   
   return $fixed;
   
@@ -464,24 +474,16 @@ function splitConversation($broken) {
 function fixSingleQuotes($broken) {
 
   // Replace single quotes with doubles, except for cases like "don't"
-  $broken = preg_replace("/([\x09\x20])\x27/", "$1\x22", $broken);
-  $fixed = preg_replace("/\x27([\x20\x0A])/", "\x22$1", $broken);
-  
+  $broken = preg_replace("/([ ]*,)\'([ ]*[\w\d])/", "$1\"$2", 
+            $broken);
+  $broken = preg_replace("/([\s]+)\'([\x41-\x5A\d])/", "$1\"$2", 
+            $broken);
+  $fixed = preg_replace("/([ ]*)([\.\!\?\-][ ]*)\'/", "$1$2\"", 
+            $broken);
+
   return $fixed;
   
 } // End function fixSingleQuotes()
-
-/* This function tests each individual feature of the program and outputs a 
- * summary either to an html document or a plain text document, based on the -h
- * option.  This function exits the code.
- */
-function testSuite($fp, $hFlag) {
-  
-  fclose($fp);
-  
-  exit("TestSuite finished, exiting program.");
-  
-} // End function testSuite()
 
 /* Output the final product, $fileString, to the file opened earlier or to 
  * Standard Out.
