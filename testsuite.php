@@ -1,6 +1,6 @@
 <?php
 
-$version = "1.6.0";
+$version = "1.0.0";
 $copyright = "2005 Eric Shields";
 
 /**  This program is free software; you can redistribute it and/or modify

@@ -1,36 +1,48 @@
 ChangeLog
 ---------
 
-See README and RELEASE for further information.
+See README for further information.
+
+Version 2.0.0 - 5/13/2012
+
+	- Fixed a major bug that was causing the paragraph function to return an
+	  empty string.
+	- Renamed the functions to names that make sense (WTF was I thinking using
+	  numbers?).
+	- Lots of minor code updates, fix some PHP NOTICES, rework some loops, etc.
+	- Replaced while loop iterators with more stable and sensible foreach loops.
+	- Removed blank line between paragraphs based on typical paperback book
+	  formatting.
+	- Added lots of TODO ideas.
 
 Version 1.6.0
 
-  - Fleshed out the testSuite function and moved it to it's own file (no change
-    in the way that it's invoked)
-  - Added a css stylesheet that the HTML output option of the testSuite uses
-  - Fixed many many bugs for functions 4, 5, and 6.
-  - Modified the numbered list detection to accept leading spaces
+	- Fleshed out the testSuite function and moved it to it's own file (no change
+	  in the way that it's invoked)
+	- Added a css stylesheet that the HTML output option of the testSuite uses
+	- Fixed many many bugs for functions 4, 5, and 6.
+	- Modified the numbered list detection to accept leading spaces
 
 Version 1.5.5
 
-  - Greatly updated the algorithm for spacing correction within the file
-  - Completed code modularization.  Each program feature will now be accessible
-    from a seperate function number.
-  - Added the code base for a testSuite function.
-  - Fixed the issue where running multiple functions would produce repeated
-    text.
-  - Switched from using global variables to using passed and returned
-    parameters.
-  - Fixed the issue where the RTF formatter would remove all newlines.
+	- Greatly updated the algorithm for spacing correction within the file.
+	- Completed code modularization. Each program feature will now be accessible
+	  from a seperate function number.
+	- Added the code base for a testSuite function.
+	- Fixed the issue where running multiple functions would produce repeated
+	  text.
+	- Switched from using global variables to using passed and returned
+	  parameters.
+	- Fixed the issue where the RTF formatter would remove all newlines.
 
 
 Version 1.4.0
 
-  - Greatly updated the command line interface, including implimenting optional
-    switches.
-  - Made the output file optional (prints to STDOUT if not present).
-  - Added a switch to prevent the printing of {Automatically formatted...}.
+	- Greatly updated the command line interface, including implimenting optional
+	  switches.
+	- Made the output file optional (prints to STDOUT if not present).
+	- Added a switch to prevent the printing of {Automatically formatted...}.
 
 Version 1.3.0
 
-  - Initial Release.
+	- Initial Release.

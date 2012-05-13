@@ -1,6 +1,6 @@
-eBookFormatter Version 1.6.0
+eBookFormatter Version 2.0.0
 ----------------------------
-Copyright 2005
+Copyright 2005 - 2012
 By Eric Shields
 
 WARNING!
@@ -24,21 +24,17 @@ eBookFormatter also includes a sophisticated method of detecting paragraphs, whi
 Features
 --------
 
-* Sophisticated paragraph detection algorithm - Creates easy to follow paragraph
-  setup:  A single blank line seperates paragraphs and the first line of each is
-  indented.
+* Sophisticated paragraph detection algorithm
 * Correction of simple OCR related mistakes
-  - erratic ellipses (...)
-  - Sentence spacing issues
+	- erratic ellipses (...)
+	- Sentence spacing issues
 * Seperation of dialog segments based on quote locations
 * Removal of extraneous blank lines
 * Detection of numerated lists
-* Removal of inter-paragraph newlines to allow for easy formatting (like
-  justification)
+* Removal of inter-paragraph newlines to allow for easy formatting (like justification)
 * Removal of RTF formatting, resulting in plain text version
 * Switch-based command line interface for easy option choosing
-* Modulaized features, allowing you complete control over what formatting is
-  preformed
+* Modulaized features, allowing you complete control over what formatting is preformed
 * Built-in testSuite, so you can see for yourself that it's working correctly
 * Many more to come!!
 
@@ -47,7 +43,7 @@ Installing eBookFormatter
 
 eBookFormatter is written in PHP 5.  As such, it can be run on any platform (operating system and hardware independant), but it requires that you have PHP 5 or higher installed on your PC.  The installation is simple:  Visit www.php.net/downloads.php, select the appropriate file, and follow the installation instructions.
 
-The windows zip package need only be unzipped and the directory containing php.exe added to the PATH environment variable (START  -> right click My Computer -> Properties -> Advanced -> Environment Variables -> select Path and click edit -> type a semicolon followed by the directory path containing php.exe).  Note:  Adding to the PATH variable is not required but will allow you to run a php program from anywhere on the PC by typing PHP <file to run>.  The above method is only garunteed for Windows XP Professional.  For other windows systems, consult the (really really bad) user guide for the location of the PATH variable.  IF YOU DO NOT FEEL COMFORTABLE EDITING WINDOWS SETTINGS, DO NOT ALTER YOUR PATH VARIABLE!  Simply use full directory paths when running php.  For example, from the directory containing php.exe type: PHP <full directory path of the file to run>.
+The windows zip package need only be unzipped and the directory containing php.exe added to the PATH environment variable.  Please visit your local help section for how to update this variable.  This is not a requirement, however.  You can always explicitly define the full path to either the text file, the php executable, or both.
 
 Using eBookFormatter
 --------------------
@@ -79,37 +75,42 @@ If the output switch is not present, the result will be printed to STDOUT.
 
 Any arguements that do not have an associated switch will be ignored.
 
-The values for function are currently 1 - 6.
-
-All functions (except 2) assume that the file is in Plain Text format.
+All functions (except 'rtf') assume that the file is in Plain Text format.
 
 --- Function Descriptions ---
 
-Function 1: Seperates the file into paragraphs, based on proper writing techniques.  This removes all origional line terminators.
+Function 'paragraphs': Seperates the file into paragraphs, based on proper writing techniques.  This removes all origional line terminators.
 
-Function 2: Attempts to remove all RTF formatting in a file.  Still in it's alpha stages, this function may result in some loss of data due to the methods certain programs use to add the formatting.  The loss of data should be minimal (part of a line in uncommon conditions).
+Function 'rtf': Attempts to remove all RTF formatting in a file.  Still in it's alpha stages, this function may result in some loss of data due to the methods certain programs use to add the formatting.  The loss of data should be minimal (part of a line in uncommon conditions).
 
-Function 3: Corrects many issues with ellipses, such as extra spaces or extra periods, converting them all into ...
+Function 'ellipses': Corrects many issues with ellipses, such as extra spaces or extra periods, converting them all into ...
 
-Function 4: Converts all instances of more than 2 spaces to 1 space and searches for places where it should be returned to 2 spaces.  Checks for extra spaces between punctuation marks and quotes. (For example . " would be converted to .")
+Function 'spacing': Converts all instances of more than 2 spaces to 1 space and searches for places where it should be returned to 2 spaces.  Checks for extra spaces between punctuation marks and quotes. (For example . " would be converted to .")
 
-Function 5: Splits conversations that occur in one paragraph into seperate paragraphs in cases where an ending quote is followed immediately by an opening quote.  (For example, ..."  "...)
+Function 'split-conversations': Splits conversations that occur in one paragraph into seperate paragraphs in cases where an ending quote is followed immediately by an opening quote.  (For example, ..."  "...)
 
-Function 6: Attempts to locate all instances of a single quote (') that are not part of a contraction or colloquial speach, and replace them with double quotes (").
+Function 'fix-quotes': Attempts to locate all instances of a single quote (') that are not part of a contraction or colloquial speach, and replace them with double quotes (").
 
-Function 100: Run the testSuite.  This will preform a series of tests, compare the results to expected results, and output a summary in either text or html format, based on whether the -h switch is active.
+Function 'testsuite': Run the testSuite.  This will preform a series of tests, compare the results to expected results, and output a summary in either text or html format, based on whether the -h switch is active.
+
+Known Issues
+------------
+
+There are a few things that the program is known to miss or alter incorrectly:
+	- Lines with no punctuation that represent a standalone paragraph, such as titles or specially formatted text like a blockquote of a letter a person in the story is seeing
+	- lines consisting of only 1 character, usually used to denote time lapse or perspective changes
+	- If by bad chance the line in the unmodified text ends in a punctuation character or dash that is not meant to be a new paragraph, one will be creaed anyway.  This has little real impact unless it is a dash being utilized as a word-concatenator, but is still incorrect.
+	- Occasionally a larger than normal paragraph will be created because no tags were found to mark its proper end.
 
 Support
 -------
 
-This is freeware.  As such, I am not in any way required to support the software.  However, bug reports, suggestions, and comments are welcome.  If I am able to do so, I will make additions, improvements, and fixes as time goes on.  Please make these reports using the appropriate interface on sourceforge.  If this is not possible, then please email me.  See the end ofthis file for contact information.
+This is freeware.  As such, I am not in any way required to support the software.  However, bug reports, suggestions, and comments are welcome.  If I am able to do so, I will make additions, improvements, and fixes as time goes on.  Please make these reports using the appropriate interface (github or sourceforge trackers).  If this is not possible, then please email me.  See the end of this file for contact information.
 
 Uninstalling eBookFormatter
 ---------------------------
 
 As no installation is required, no uninstallation is required.  Simply delete the folder containing the eBookFormatter files. (Or just delete the files related to eBookFormatter).
-
-If you added the PHP folder to your windows PATH variable, you may wish to remove it now.  If so, follow the steps listed under Installing eBookFormatter and remove the semicolon and directory path you added above.
 
 Lisence Agreement
 -----------------
@@ -119,7 +120,7 @@ This software is released under the GNU GPL (General Public Lisence) and is free
 Donations
 ---------
 
-To donate to this or any other of my projects, send a paypal payment to shiermail-ebay@yahoo.com.
+To donate to this or any other of my projects, send a paypal payment to shiermail-ebay@yahoo.com.  Please include what project you are supporting in the notes and if you have any suggestions for what to add next.
 
 All donations will be put towards removing obticles preventing me from furthering my projects, i.e. having to work for food :P
 

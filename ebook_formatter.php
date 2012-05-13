@@ -1,7 +1,7 @@
 <?php
 
-$version = "1.6.0";
-$copyright = "2005 Eric Shields";
+$version = "2.0.0";
+$copyright = "2005 - 2012 Eric Shields";
 
 /**  This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,19 +20,21 @@ $copyright = "2005 Eric Shields";
 
 include 'testsuite.php';
 
-/* Problems and Ideas not written up in Tasks:
+/* TODO:
  *   Correct sentence spacing around dashes, commas, and after ellipses
+ *   Output testSuite to STDOUT when no -o specified, to match normal runs
+ *   Add "puncuation at end of line + blank next line" as paragraph tag
+ *   Check for lines consisting exclusively of 1 character, like '-' or '*'
+ *   Check for dash-as-part-of-a-word
+ *   Echo processing details to user if verbose flag enabled
+ *   Detect ASCII art and preserve leading whitespace
+ *   Detect lines shorter than the typical
+ *   Add option to set newline format (Linux vs. Windows vs. Mac)
+ *   Allow batch processing with a designated string appended to each output file
  */
 
 // Output a blank line for readability
 echo "\n";
-
-// Initialize the variable used in preg_match so the parser will stop
-// complaining
-$match = '';
-
-// Initialize the output string to ensure nothing wierd happens
-$fileString = '';
 
 // Check that at least the input file is given
 if($argc == 1) {
@@ -52,11 +54,16 @@ if($argc == 1) {
 //         to output the results in HTML format.  If 100 is not present, this
 //         flag is ignored.
 //
+
+// Initialize variables
 $oFlag = FALSE;
 $fFlags = array();
 $vFlag = FALSE;
 $hFlag = FALSE;
 $ext = 'txt';
+$fp1 = NULL;
+$match = '';
+$fileString = '';
 
 // Parse the command line arguements. This should ignore the first arguement,
 // which is the program name.
@@ -68,7 +75,7 @@ for($i = 1; $i < $argc; $i++) {
 
     case 'i':
 
-      if(!$fileString = file_get_contents($argv[$i + 1])) {
+      if(!($fileString = file_get_contents($argv[$i + 1]))) {
         exit("Fatal Error(ebook_formatter.php):  Could not open input file (" .
              $argv[$i + 1] . ")!\n");
       } // End if statement
@@ -78,7 +85,7 @@ for($i = 1; $i < $argc; $i++) {
       break;
     case 'o':
 
-      if(!$fp1 = fopen($argv[$i + 1], 'w')) {
+      if(!($fp1 = fopen($argv[$i + 1], 'w'))) {
         exit("Fatal Error(ebook_formatter.php):  Could not open output file (" .
              $argv[$i + 1] . ")!\n");
       } // End if statement
@@ -122,47 +129,49 @@ for($i = 1; $i < $argc; $i++) {
 
 } // End foreach loop
 
-// Check if this run is to run the testSuite.  The -o switch must be enabled.
-if(in_array(100, $fFlags) && $oFlag) {
+// Check if this run is to run the testSuite.
+if(in_array('testsuite', $fFlags)) {
 
-  testSuite($fp1, $hFlag);
+	if ($oFlag) {
 
-} else if(in_array(100, $fFlags) && !$oFlag) {
+		testSuite($fp1, $hFlag);
 
-  fprintf(STDERR, "\nWarning!  TestSuite function selected with no output file!"
-                  . "  Outputting to file %s\\\\test_output.%s.\n\n", getcwd(),
-                  $ext);
+	} else {
 
-  if(!$fp1 = fopen("test_output.$ext", 'w')) {
-    exit("Fatal Error(ebook_formatter.php):  Could not open output file " .
-         "(test_output.$ext)!\n");
-  } // End if statement
+		fprintf(STDERR, "\nWarning!  TestSuite function selected with no output file!"
+										. "  Outputting to test_output.%s.\n\n", $ext);
 
-  testSuite($fp1, $hFlag);
+		if(!($fp1 = fopen("test_output.$ext", 'w'))) {
+			exit("Fatal Error(ebook_formatter.php):  Could not open output file " .
+					 "(test_output.$ext)!\n");
+		} // End if statement
+
+		testSuite($fp1, $hFlag);
+
+	} // End else statement
 
 } // End if - else if statments
 
 // Preform the functions selected, in the order listed on the command line
-reset($fFlags);
 foreach($fFlags as $f) {
 
   switch($f) {
-    case 1:
+    case 'paragraphs':
       $fileString = doParagraphs($fileString);
       break;
-    case 2:
+    case 'rtf':
       $fileString = removeRTF($fileString);
       break;
-    case 3:
+    case 'ellipses':
       $fileString = fixEllipses($fileString);
       break;
-    case 4:
+    case 'spacing':
       $fileString = fixSentenceSpacing($fileString);
       break;
-    case 5:
+    case 'split-conversations':
       $fileString = splitConversation($fileString);
       break;
-    case 6:
+    case 'fix-quotes':
       $fileString = fixSingleQuotes($fileString);
       break;
     default:
@@ -178,8 +187,6 @@ foreach($fFlags as $f) {
 
   } // End switch statement
 
-  next($fFlags);
-
 } // End foreach loop
 
 outputToFile($fp1, $fileString, $oFlag, $vFlag, $version, $copyright);
@@ -187,15 +194,14 @@ outputToFile($fp1, $fileString, $oFlag, $vFlag, $version, $copyright);
 /////////// End main "method"
 
 /* The heart of the program, this function will detect and seperate the
- * paragraphs in the file.  A blank line will be inserted inbetween and the
- * start of each will be indented.  This method will remove the newlines at the
- * end of each line.
+ * paragraphs in the file.  This method will remove the newlines at the
+ * end of each line and indent each paragraph with a tab.
  */
 function doParagraphs($ickyString) {
 
   $tags = array();
-  $keep = FALSE;
   $match = '';
+  $cleanString = '';
 
   // Create the line array
   $fileArray = preg_split("/[\n\r]+/", $ickyString);
@@ -209,28 +215,12 @@ function doParagraphs($ickyString) {
   } // End foreach loop
 
   // Eliminate blank lines
-  reset($fileArray);
-  while(current($fileArray)) {
+  foreach($fileArray as $key => $value) {
 
-    // If it's not a tab, newline, carriage return, or space, keep the line
-    if(preg_match("/[^\x09\x0A\x0D\x20]*/", current($fileArray), $match)) {
-         $keep = TRUE;
-    } // End if statement
-
-    // Deal with the line accordingly
-    if($keep == FALSE) {
-
-      // Kill element
-      unset($fileArray[key($fileArray)]);
-
-    } else {
-
-      // Keep element
-      next($fileArray);
-
-    } // End if statement
-
-    $keep = FALSE;
+    // Remove any line that consists entirely of whitespace
+    if(preg_match("/^\s*$/", $value, $match)) {
+      unset($fileArray[$key]);
+    } // End if - else statement
 
   } // End while loop
 
@@ -251,70 +241,64 @@ function doParagraphs($ickyString) {
   unset($reducedArray);
 
   // Establish tags - essentially new paragraghs.
-  reset($fileArray);
-  while(current($fileArray)) {
+  foreach($fileArray as $key => $value) {
 
     // Check for evidence of a new paragraph: A starting tab
-    if(preg_match("/^\t+/", current($fileArray))) {
-      $tags[] = key($fileArray);
+    if(preg_match("/^\t+/", $value)) {
+      $tags[] = $key;
     } // End if statement
 
     // Check for additional new paragraph markings: Multiple starting spaces
-    if(preg_match("/^[ ]{3,}/", current($fileArray))) {
-      $tags[] = key($fileArray);
+    if(preg_match("/^[ ]{3,}/", $value)) {
+      $tags[] = $key;
     } // End if statement
 
     // Check for additional new paragraph markings:  Period, dash, or other
     //          punctuation before a quote at end of line
-    if(preg_match("/(\.|-|\x97|\!|\?)[ ]*(\x60|\'|\"|)[ \r]*$/",
-            current($fileArray))) {
-      $tags[] = key($fileArray) + 1;
+    if(preg_match("/(\.|-|\x97|\!|\?|\*|~)[ ]*(\x60|\'|\"|)[ \r]*$/",
+            $value)) {
+      $tags[] = $key + 1;
     } // End if statement
 
     // Check for additional new paragraph markings:  Quote at start of line
-    if(preg_match("/^(\x60|\'|\")/", current($fileArray))) {
-      $tags[] = key($fileArray);
+    if(preg_match("/^(\x60|\'|\")/", $value)) {
+      $tags[] = $key;
     } // End if statement
 
     // Check for additional new paragraph markings:  Numbered list
-    if(preg_match("/[\s]*\d+\./", current($fileArray))) {
-      $tags[] = key($fileArray);
+    if(preg_match("/[\s]*\d+\./", $value)) {
+      $tags[] = $key;
     } // End if statement
-
-    next($fileArray);
 
   } // End while loop
 
   // Strip newlines from each line and form paragraphs as one line each (no
-  // newline characters), trim any whitespace from the start and end of each
-  // paragraph, and output the paragraph to a file.
-  reset($fileArray);
+  // newline characters), and trim any whitespace from the start and end of each
+  // paragraph.
   $currentString = '';
-  while(current($fileArray)) {
+  foreach($fileArray as $key => $value) {
 
     // Strip newlines
-    if(!in_array(key($fileArray), $tags)) {
+    if(!in_array($key, $tags)) {
 
-      // Trim whitespace and format this section of the line
+      // Trim whitespace and add back a single trailing space
       $currentString .=
-          preg_replace("/^\s*(.+?)\s*$/", "$1 ", current($fileArray));
+          preg_replace("/^\s*(.+?)\s*$/", "$1 ", $value);
 
     // Complete paragraph
     } else {
 
       // Trim whitespace and format paragraph
-      $currentString = preg_replace("/^\s*(.+?)\s*$/", "\t$1\n\n",
+      $currentString = preg_replace("/^\s*(.+?)\s*$/", "\t$1\n",
                 $currentString);
 
       // Append current string to output string
       $cleanString .= $currentString;
 
       $currentString =
-          preg_replace("/^\s*(.+?)\s*$/", "$1 ", current($fileArray));
+          preg_replace("/^\s*(.+?)\s*$/", "$1 ", $value);
 
     } // End if - else statements
-
-    next($fileArray);
 
   } // End while loop
 
@@ -349,25 +333,22 @@ function removeRTF($rtfString) {
     } // End if statement
   } // End foreach loop
 
-  reset($fileArray);
-  while(current($fileArray)) {
+  foreach($fileArray as $key => $value) {
 
     // Get strings that the regular expression parser will accept
     $tab = preg_quote('\tab');
     $par = preg_quote('\par');
 
     // Remove \tab, \par, and any lines that start with \, }, or {
-    $fileArray[key($fileArray)] =
-        preg_replace("/($par |$tab )/", '', current($fileArray));
-    $fileArray[key($fileArray)] =
-        preg_replace("/[\{\}].*$/", '', current($fileArray));
-    $fileArray[key($fileArray)] =
-        preg_replace("/^\\\\.*$/", '', current($fileArray));
+    $fileArray[$key] =
+        preg_replace("/($par |$tab )/", '', $value);
+    $fileArray[$key] =
+        preg_replace("/[\{\}].*$/", '', $value);
+    $fileArray[$key] =
+        preg_replace("/^\\\\.*$/", '', $value);
 
     // Add current string to final one and preserve line terminators
-    $ptString .= current($fileArray) . $terminator[0];
-
-    next($fileArray);
+    $ptString .= $value . $terminator[0];
 
   } // End while loop
 
@@ -393,6 +374,7 @@ function fixEllipses($broken) {
 function fixSentenceSpacing($broken) {
 
   $pieces = '';
+  $fixed = '';
 
   // Replace all instances of 2 or more spaces with 1
   $broken = preg_replace("/[ ]{2,}/", " ", $broken);
@@ -406,32 +388,33 @@ function fixSentenceSpacing($broken) {
     preg_match("/(\.|\!|\?|\:)( )?(\'|\")?( )?([\w\n\r]{0,3})/", $fileArray[$i],
               $pieces);
 
-    if(preg_match("/[\n\r]+/",$pieces[5])) {
+    if(isset($pieces[5]) && preg_match("/[\n\r]+/",$pieces[5])) {
 
       // Any time that it ends in a newline character, ignore all the spaces
       $fileArray[$i] =
                 preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?([\w\n\r]{0,3})/",
                 "$1$3$5", $fileArray[$i]);
 
-    } else if($pieces[4] && preg_match("/\w/",$pieces[5])) {
+    } else if(isset($pieces[4]) && isset($pieces[5]) && preg_match("/\w/",$pieces[5])) {
 
-      // If it end in a space followed by a word character, assume the
+      // If it ends in a space followed by a word character, assume it's part
+      // of the first sentence.
       $fileArray[$i] =
                 preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?([\w\n\r]{0,3})/",
                 "$1$3  $5", $fileArray[$i]);
 
-    } else if($pieces[2] && !$pieces[4] && preg_match("/\w/",$pieces[5])) {
+    } else if(isset($pieces[2]) && !isset($pieces[4]) && preg_match("/\w/",$pieces[5])) {
 
-      // If there's a quote and a space occurs after it, assume the quote is
-      // part of the current sentence and insert 2 spaces after it
+      // If there's a space before the quote and none after, assume it's part
+      // of the second sentence.
       $fileArray[$i] =
                 preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?([\w\n\r]*)/",
                 "$1  $3$5", $fileArray[$i]);
 
-    } else if(!$pieces[2] && !$pieces[4] && preg_match("/\w/",$pieces[5])) {
+    } else if(!isset($pieces[2]) && !isset($pieces[4]) && isset($pieces[5]) && preg_match("/\w/",$pieces[5])) {
 
-      // If there's a quote and a space occurs after it, assume the quote is
-      // part of the current sentence and insert 2 spaces after it
+      // If there's no spaces around the quote, assume it's part of the first
+      // sentence.
       $fileArray[$i] =
                 preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?([\w\n\r]*)/",
                 "$1$3  $5", $fileArray[$i]);
