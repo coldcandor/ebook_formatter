@@ -109,7 +109,7 @@ for($i = 1; $i < $argc; $i++) {
     default:
     
       fprintf(STDERR, "\nWarning!  Unrecognized switch (%s), ignoring.\n", 
-              $argv[$i]);
+            $argv[$i]);
       
       break;
   } // End switch statement
@@ -165,8 +165,13 @@ foreach($fFlags as $f) {
         break;
       default:
       
-        fprintf(STDERR, "\nWarning!  Unrecognized function (%d), ignoring.\n", 
-              key($fFlags));        
+        // Close output file and error out of program.
+        if($oFlag) {
+          fclose($fp1);
+        } // End if statement
+        exit("Fatal Error(eBookFormatter.php):  Invalid function selected (" .
+             (key($fFlags)) . ")!\n");
+        
         break;
         
     } // End switch statement
@@ -208,7 +213,7 @@ function doParagraphs($ickyString) {
   while(current($fileArray)) {
     
     // If it's not a tab, newline, carriage return, or space, keep the line
-    if(preg_match("/[^\x09\x0A\x0D\x20]/", current($fileArray), $match)) {
+    if(preg_match("/[^\x09\x0A\x0D\x20]*/", current($fileArray), $match)) {
          $keep = TRUE;
     } // End if statement
       
@@ -242,6 +247,9 @@ function doParagraphs($ickyString) {
     $fileArray[] = $v;
   } // End foreach loop  
   
+  // Free up the resources from the temp array
+  unset($reducedArray);
+  
   // Establish tags - essentially new paragraghs.
   reset($fileArray);
   while(current($fileArray)) {
@@ -259,7 +267,7 @@ function doParagraphs($ickyString) {
     // Check for additional new paragraph markings:  Period, dash, or other 
     //          punctuation before a quote at end of line
     if(preg_match("/(\.|-|\x97|\!|\?)[ ]*(\x60|\'|\"|)[ \r]*$/", 
-        current($fileArray))) {
+            current($fileArray))) {
       $tags[] = key($fileArray) + 1;
     } // End if statement
 
@@ -296,7 +304,7 @@ function doParagraphs($ickyString) {
       
       // Trim whitespace and format paragraph
       $currentString = preg_replace("/^\s*(.+?)\s*$/", "\t$1\n\n", 
-                       $currentString);
+                $currentString);
       
       // Append current string to output string
       $cleanString .= $currentString;
@@ -308,33 +316,36 @@ function doParagraphs($ickyString) {
     
     next($fileArray);
     
-    return $cleanString;
-    
   } // End while loop
   
   // Trim whitespace and format paragraph
   $currentString = preg_replace("/^\s*(.)/", "\t$1", $currentString);
   $currentString = preg_replace("/(.)\s*$/", "$1", $currentString);
 
-  $fileString .= $currentString;
+  $cleanString .= $currentString;
   
+  return $cleanString;
+    
 } // End function type1()
 
 /* Remove RTF style formatting.  This function preserrves line terminators.
  */
 function removeRTF($rtfString) {
   
+  $terminator = '';
+  
+  // The first line terminator should be consistant throughout the file, save
+  // it to add back to each line later
+  preg_match("/[\n\r]+/", $rtfString, $terminator);
+  
   // Create the line array
-  $fileArray = preg_split("/([\n\r]+)/", $rtfString, -1, 
-        "PREG_SPLIT_DELIM_CAPTURE");
-        
-  print_r($fileArray);
+  $fileArray = preg_split("/[\n\r]+/", $rtfString);
   
   // Check if the file split into lines correctly
   foreach($fileArray as $v) {
     if(preg_match("/[\n\r]+/", $v)) {
-      exit("Fatal Error(eBookFormatter.php):  Split did not preform" . 
-      "correctly!\n");
+      exit("Fatal Error(eBookFormatter.php):  Split did not preform 
+            correctly!\n");
     } // End if statement
   } // End foreach loop
   
@@ -354,7 +365,7 @@ function removeRTF($rtfString) {
         preg_replace("/^\\\\.*$/", '', current($fileArray));
 
     // Add current string to final one and preserve line terminators
-    $ptString .= current($fileArray);
+    $ptString .= current($fileArray) . $terminator[0];
     
     next($fileArray);
     
@@ -370,7 +381,7 @@ function removeRTF($rtfString) {
 function fixEllipses($broken) {
 
   // Fix ellipses
-  $fixed = preg_replace("/[ ]?\.[ ]?\.[ \.]{0,5}/", '...', $broken);
+  $fixed = preg_replace("/[ ]?\.[ ]?\.[ \.]{0,5}/", '...  ', $broken);
   
   return $fixed;
   
@@ -386,36 +397,46 @@ function fixSentenceSpacing($broken) {
   // Replace all instances of 2 or more spaces with 1
   $broken = preg_replace("/[ ]{2,}/", " ", $broken);
   
-  // Fix spacing after punctuation marks
-  while(preg_match("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", $broken, $pieces)) {
+  $fileArray = preg_split("/([\.\!\?\:-][ ]?[\'\"]?[ \w\n\r]?)/", $broken, -1, 
+            PREG_SPLIT_DELIM_CAPTURE);
   
-    if($pieces[3] != '') {
+  // Fix spacing after punctuation marks
+  for($i = 0; $i < count($fileArray); $i++) {
     
-      if($pieces[4] != '') {
+    preg_match("/(\.|\!|\?|\:)( )?(\'|\")?([ \w\n\r]*)/", $fileArray[$i], 
+              $pieces);
+  
+    if(preg_match("/[\n\r]+/",$pieces[4])) {
       
-        // If there's a quote and a space occurs after it, assume the quote is 
-        // part of the current sentence and insert 2 spaces after it
-        $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1$3  ", 
-              $broken, 1);
-        
-      } else {
-        
-        // If there's a quote and no space occurs after it, assume the quote is 
-        // part of the next sentence and insert 2 spaces before it
-        $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1  $3", 
-              $broken, 1);
-        
-      } // End if - else statements
+      // If there's a quote and a space occurs after it, assume the quote is 
+      // part of the current sentence and insert 2 spaces after it
+      $fileArray[$i] = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?([ \w\n\r]*)/", 
+                "$1$3$4", $fileArray[$i]);
       
-    } else {
+    } else if(preg_match("/\w/",$pieces[4]) && 
+              !preg_match("/ \w/",$pieces[4])) {
       
-      // If there is no quote, then ignore the current spaces and insert 2
-      $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1  ", $broken, 
-              1);
-        
-    } // End if - else statments
+      // If there's a quote and a space occurs after it, assume the quote is 
+      // part of the current sentence and insert 2 spaces after it
+      $fileArray[$i] = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?([ \w\n\r]*)/", 
+                "$1$3  $4", $fileArray[$i]);
+      
+    } else if(preg_match("/ \w/",$pieces[4])) {
+      
+      // If there's a quote and a space occurs after it, assume the quote is 
+      // part of the current sentence and insert 2 spaces after it
+      $fileArray[$i] = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?([ \w\n\r]*)/", 
+                "$1  $3$4", $fileArray[$i]);
+
+    } // End if - else - if statements      
     
-  } // End while loop
+  } // End for loop
+  
+  foreach($fileArray as $v) {
+    
+    $fixed .= $v;
+    
+  } // End foreach loop
     
   return $fixed;
   
@@ -423,14 +444,13 @@ function fixSentenceSpacing($broken) {
 
 /* Often a conversation will have multiple speakers within a single paragraph 
  * without stating a switch in whose speaking.  I view this as a bad thing and a 
- * formatting error.  This function will split up those conversations into 
- * seperate paragraphs.
+ * formatting error.  This function will insert a newline between them.
  */
 function splitConversation($broken) {
 
   // Break apart conversations that take place on one line (e.g. ...' '... or
   // ..." "...)
-  $fixed = preg_replace("/(\'|\")[ ]+(\'|\")/", "$1\n\n\t$2", $broken);
+  $fixed = preg_replace("/(\'|\")[ ]+(\'|\")/", "$1\n$2", $broken);
   
   return $fixed;
   
@@ -469,9 +489,10 @@ function testSuite($fp, $hFlag) {
 function outputToFile($fp1, $fileString, $oFlag, $vFlag, $version, $copyright) {
   
 // Append the version info to the start of the file
-if(!$vFlag) {
+if(!$vFlag && !preg_match("/{Automatically formatted using eBookFormatter v/", 
+          $fileString)) {
   $fileString = "{Automatically formatted using eBookFormatter v" . $version . 
-                "\n". " Copyright " . $copyright . "}\n\n" . $fileString;
+            "\n" . " Copyright " . $copyright . "}\n\n" . $fileString;
 } // End if statement
 
   if($oFlag) {

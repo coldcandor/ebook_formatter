@@ -1,4 +1,4 @@
-eBookFormatter version 1.4.0
+eBookFormatter version 1.5.5
 ----------------------------
 By Eric Shields
 
@@ -27,14 +27,16 @@ Features
 * Correction of simple OCR related mistakes
   - erratic ellipses (...), including the replacing the single-character version 
     with three periods
-  - Fix some spacing issues after quotes and ellipses
+  - Sentence spacing issues
 * Seperation of dialog segments based on quote locations
 * Removal of extraneous blank lines
 * Detection of numerated lists
 * Removal of inter-paragraph newlines to allow for easy formatting (like 
   justification)
-* Removal of RTF formatting, resulting in plain text version (Currently minimal 
-  functionality)
+* Removal of RTF formatting, resulting in plain text version
+* Switch-based command line interface for easy option choosing
+* Modulaized features, allowing you complete control over what formatting is
+  preformed
 * Many more to come!!
 
 Installing eBookFormatter
@@ -49,7 +51,22 @@ Using eBookFormatter
 
 eBookFormatter is a command-line based program.
 
-"Usage:  php eBookFormatter.php -i <inputFile> [-o <outputFile>] [-f <firstFunction[,secondFunction[,thirdFunction[,...]]]>] [-v]\n"
+--- Usage ---  
+
+php eBookFormatter.php -i <inputFile> [-o <outputFile>] [-f <firstFunction>[,<secondFunction>[,<thirdFunction>[,<...>]]]] [-v]
+
+--- Command line switch descriptions ---
+
+-i <inputFile>     // Designate the input file or path
+[-o <outputFile>]  // Designate the output file or path
+[-f <firstFunction[,secondFunction[,thirdFunction[,...]]]>] // Function(s) to 
+         preform.  PREFORMED IN THE ORDER LISTED!
+[-v] // Do not append formatter ID at top of file
+[-h] // If 100 is specified as one of the functions, this tells the program
+        to output the results in HTML format.  If function 100 is not present, 
+        this flag is ignored.
+
+--- NOTES ---
 
 If there are any spaces in your directory path, MAKE SURE TO SURROUND IT WITH QUOTES!  Otherwise it will be interpreted as seperate arguments and the results will be completely unpredictable (it depends on what the arguements end up being).
 
@@ -57,13 +74,25 @@ If the output switch is not present, the result will be printed to STDOUT.
 
 Any arguements that do not have an associated switch will be ignored.
 
-The values for function are currently 1 or 2.  
+The values for function are currently 1 - 6.  
 
-Function 1: Assumes <input file> is in plain text format.  This function will preform all the features listed above, except for the removal of the RTF formatting, which is covered by function 2.
+All functions (except 2) assume that the file is in Plain Text format.
 
-Function 2:  Attempts to remove all RTF formatting in a file.  Still in it's alpha stages, this function may result in some loss of data due to the methods certain programs use to add the formatting.  The loss of data should be minimal (part of a line in uncommon conditions).  Additionally, the resulting text is very poorly formatted; it will contain no newlines.  This makes it impossible to run function 1 on the result (and have any significant change), but may still be useful to some people.
+--- Function Descriptions ---
 
-While this version supports stringing multiple functions into one run, the result of the functions beyond the first will simply be added onto the first, making it not very useful at present.
+Function 1: Seperates the file into paragraphs, based on proper writing techniques.  This removes all origional line terminators.
+
+Function 2: Attempts to remove all RTF formatting in a file.  Still in it's alpha stages, this function may result in some loss of data due to the methods certain programs use to add the formatting.  The loss of data should be minimal (part of a line in uncommon conditions).
+
+Function 3: Corrects many issues with ellipses, such as extra spaces or extra periods, converting them all into ...
+
+Function 4: Converts all instances of more than 2 spaces to 1 space and searches for places where it should be returned to 2 spaces.  Checks for extra spaces between punctuation marks and quotes. (For example . " would be converted to .")
+
+Function 5: Splits conversations that occur in one paragraph into seperate paragraphs in cases where an ending quote is followed immediately by an opening quote.  (For example ..."  "...)
+
+Function 6: Attempts to locate all instances of a single quote (') that are not part of a contraction, and replace them with double quotes (").  This function is only partially finished.
+
+Function 100: Run the testSuite.  This will preform a series of tests, compare the results to expected results, and output a summary in either text or html format, based on whether the -h switch is active.
 
 Support
 -------
