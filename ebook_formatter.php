@@ -3,11 +3,9 @@
 include 'ASCII.php';
 
 /* IDEA: Add a GUI
- * TODO: Worst case paragraph scenario
  * TODO: Add ASCII
  * TODO: Add RTF formatting removal
  * TODO: Formatted quotes (like poems, songs, letter readings, T.O.C., etc)
- * TODO: Fix things like bad ellipses
  * IDEA: Detect mismatched quotes
  * IDEA: Detect seperators (like a line of dashes, ****, or multiple blank lines)
  * IDEA: Remove email-style reply inserts (like > at the start of each line)
@@ -41,7 +39,7 @@ switch($argv[3]) {
     removeRTF();
     break;
   case 4:
-    ASCII();
+    
     break;
   default:
   
@@ -55,7 +53,7 @@ switch($argv[3]) {
 
 outputToFile();
 
-
+/////////// End main "method"
   
 function type1() {
   
@@ -183,9 +181,18 @@ function type2() {
 function removeRTF() {
   
   global $fileArray;
-  global $fp1;
+  global $fileString;
+    echo "hi";
   
-  // Remove RTF formatting
+  reset($fileArray);
+  while(current($fileArray)) {
+    $tab = preg_quote("\tab");
+    $par = preg_quote("\par");
+    echo "hi";
+    echo $tab, '  ', $par;
+    $fileString .= preg_replace("/($par |$tab )/", '', current($fileArray));
+    next($fileArray);
+  } // End while loop
   
 } // End function removeRTF()
 
