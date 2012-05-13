@@ -1,6 +1,8 @@
 eBookFormatter Release Notes
 ----------------------------
 
+See README.txt and ChangeLog.txt for more information.
+
 Version 1.3.0
 
   - Initial Release - This version gives stable (read consistant) but sometimes 
@@ -8,4 +10,13 @@ Version 1.3.0
   - While this version includes an RTF formatting removal tool, it is still very crude 
     and leaves very poorly formatted plain text.  Many improvements are planned for 
     furutre releases.
-  - See README.txt and ChangeLog.txt for more information.
+
+Version 1.4.0
+
+  - Problem found with the rtf formatter - the resulting file will contain no newlines, 
+    preventing it from being successfully formatted by function 1.
+  - Greatly updated command line interface - see README.txt "using eBookFormatter" for 
+    details on how to use the new switch based method.
+  - While this version supports stringing multiple functions into one run, the result
+    of the functions beyond the first will simply be added onto the first, making it
+    not very useful at present.

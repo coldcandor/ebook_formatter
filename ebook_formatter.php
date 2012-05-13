@@ -1,76 +1,158 @@
 <?php
 
-$version = "1.3.0";
+$version = "1.4.0";
 $copyright = "2005 Eric Shields";
 
 /**  This program is free software; you can redistribute it and/or modify
-  *   it under the terms of the GNU General Public License as published by
-  *   the Free Software Foundation; either version 2 of the License, or
-  *   (at your option) any later version.
-  *
-  *   This program is distributed in the hope that it will be useful,
-  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
-  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  *   GNU General Public License for more details.
-  *
-  *   You should have received a copy of the GNU General Public License
-  *   along with this program; if not, write to the Free Software
-  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 
-/* IDEA: Add a GUI
- * IDEA: Detect mismatched quotes
- * IDEA: Detect seperators (like a line of dashes, ****, or multiple blank lines)
- * IDEA: Remove email-style reply inserts (like > at the start of each line)
- * IDEA: Option to create \n terminated text at a certain column
- * IDEA: Completely modularize the features
- * TODO: Possibly implement line length method of detecting paragraphs
- * TODO: Formatted quotes (like poems, songs, letter readings, T.O.C., etc)
- * TODO: Check for chapter names (short line immediately following chapter line)
- * TODO: Correct spacing around dashes
+/* Problems and Ideas not written up in Tasks:
  */
 
 // Output a blank line for readability
 echo "\n";
 
-// Input error checking and file setup.
-if(count($argv) != 4) {
-  exit("Usage:  php eBookFormatter.php <Input File> <Output File> <function>\n");
-} else if(!$inputString = file_get_contents($argv[1])) {
-  exit("Fatal Error(eBookFormatter.php):  Could not open input file ($argv[1])!\n\n");
-} else if(!$fp1 = fopen($argv[2], 'w')) {
-  exit("Fatal Error(eBookFormatter.php):  Could not open output file ($argv[2])!\n\n");
-} // End if - else if statements
+// Initialize the variable used in preg_match so the parser will stop complaining
+$match = '';
+
+// Check that at least the input file is given
+if($argc == 1) {
+  exit("Usage:  php eBookFormatter.php -i <inputFile> [-o <outputFile>] " . 
+       "[-f <firstFunction[,secondFunction[,thirdFunction[,...]]]>] [-v]\n");
+} // End if statement
+
+// Command line arguements:
+// 
+// -i <inputFile>   // Designate the input file or path
+// [-o <outputFile>]  // Designate the output file or path
+// [-f <firstFunction[,secondFunction[,thirdFunction[,...]]]>] // Function(s) to 
+//          preform.  PREFORMED IN THE ORDER LISTED!
+// [-v] // Do not append formatter ID at top of file
+//
+$oFlag = FALSE;
+$fFlags = array();
+$vFlag = FALSE;
+
+// Parse the command line arguements. This should ignore the first arguement,
+// which is the program name.
+for($i = 1; $i < $argc; $i++) {
+  
+  preg_match("/-(\w)/", $argv[$i], $match);
+  
+  switch($match[1]) {
+    
+    case 'i':
+    
+      if(!$inputString = file_get_contents($argv[$i + 1])) {
+        exit("Fatal Error(eBookFormatter.php):  Could not open input file (" . 
+             $argv[$i + 1] . ")!\n");
+      } // End if statement
+      
+      $i++;
+    
+      break;
+    case 'o':
+    
+      if(!$fp1 = fopen($argv[$i + 1], 'w')) {
+        exit("Fatal Error(eBookFormatter.php):  Could not open output file (" . 
+             $argv[$i + 1] . ")!\n");
+      } // End if statement
+      
+      $oFlag = TRUE;
+      
+      $i++;
+    
+      break;
+    case 'f':
+    
+      $formats = explode(',', $argv[$i + 1]);
+      
+      foreach($formats as $f) {
+        $fFlags[$f] = TRUE;
+      } // End foreach loop
+      
+      $i++;
+    
+      break;
+    case 'v':
+    
+      $vFlag = TRUE;
+    
+      break;
+    default:
+    
+      fprintf(STDERR, "\nWarning!  Unrecognized switch (%s), ignoring.\n", $argv[$i]);
+      
+      break;
+  } // End switch statement
+  
+  unset($match); // Ensure that nothing is repeated or mixed up
+  
+} // End foreach loop
 
 // Initialize output string
-$fileString = "{Automatically formatted using eBookFormatter v" . $version . "\n"
-. " Copyright " . $copyright . "}\n\n";
+if(!$vFlag) {
+  $fileString = "{Automatically formatted using eBookFormatter v" . $version . "\n"
+                . " Copyright " . $copyright . "}\n\n";
+} else {
+  
+  $fileString = '';
+  
+} // End if - else statement
 
 // Create the line array
 $fileArray = preg_split("/[\n\r]+/", $inputString);
 
+// Check if the file split into lines correctly
 foreach($fileArray as $v) {
   if(preg_match("/[\n\r]+/", $v)) {
-    exit("Fatal Error(eBookFormatter.php):  Split did not preform correctly!");
+    exit("Fatal Error(eBookFormatter.php):  Split did not preform correctly!\n");
   } // End if statement
 } // End foreach loop
 
-switch($argv[3]) {
-  case 1:
-    type1();
-    break;
-  case 2:
-    removeRTF();
-    break;
-  default:
+// Preform the functions selected, in the order listed on the command line
+reset($fFlags);
+foreach($fFlags as $f) {
+
+  if($f) {
+    
+    switch(key($fFlags)) {
+      case 1:
+        type1();
+        break;
+      case 2:
+        removeRTF();
+        break;
+      default:
+      
+        // Close output file and error out of program.
+        if($oFlag) {
+          fclose($fp1);
+        } // End if statement
+        exit("Fatal Error(eBookFormatter.php):  Invalid function selected (" .
+             (key($fFlags)) . ")!\n");
+        
+        break;
+        
+    } // End switch statement
+    
+  } // End if statement
   
-    // Close output file and error out of program.
-    fclose($fp1);  
-    exit("Fatal Error(eBookFormatter.php):  Function select value must be in the range of 1 to 4\n\n");
-    
-    break;
-    
-} // End switch statement
+  next($fFlags);
+  
+} // End foreach loop
 
 outputToFile();
 
@@ -88,6 +170,7 @@ function type1() {
   global $fileString;
   $tags = array();
   $keep = FALSE;
+  $match = '';
   
   // Eliminate blank lines
   reset($fileArray);
@@ -267,9 +350,14 @@ function outputToFile() {
   
   global $fp1;
   global $fileString;
+  global $oFlag;
 
-  fputs($fp1, $fileString);
-  fclose($fp1);
+  if($oFlag) {
+    fputs($fp1, $fileString);
+    fclose($fp1);
+  } else {
+    echo $fileString;
+  } // End if - else statement
   
 } // End function outputToFile()
 
