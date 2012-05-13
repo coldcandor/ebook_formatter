@@ -61,13 +61,20 @@ function type1() {
   global $fileString;
   $tags = array();
   
+  // Eliminate blank lines
+  reset($fileArray);
+  while(current($fileArray)) {
+    $fileArray[key($fileArray)] = preg_replace("/^\s*?$/", '', current($fileArray));
+    next($fileArray);
+  } // End while loop                           
+  
   // Establish tags - essentially new paragraghs.
   reset($fileArray);
   while(current($fileArray)) {
     
     // Check for evidence of a new paragraph: a blank line, a tab or multiple
     // spaces at the start of a line.  If found, add a tag on that line.
-    if(preg_match("/^[\n\t\s{2,}]+/", current($fileArray))) {
+    if(preg_match("/^[\t\s{2,}]+/", current($fileArray))) {
       $tags[] = key($fileArray);
     } // End if statement
     
@@ -106,13 +113,6 @@ function type1() {
   print_r($tags);
   //print_r($fileArray);
 
-  // Eliminate blank lines
-  reset($fileArray);
-  while(current($fileArray)) {
-    $fileArray[key($fileArray)] = preg_replace("/^\s*?$/", '', current($fileArray));
-    next($fileArray);
-  } // End while loop                           
-  
   // Strip newlines from each line and form paragraphs as one line each (no 
   // newline characters), trim any whitespace from the start and end of each 
   // paragraph, and output the paragraph to a file.
@@ -182,15 +182,22 @@ function removeRTF() {
   
   global $fileArray;
   global $fileString;
-    echo "hi";
   
   reset($fileArray);
   while(current($fileArray)) {
-    $tab = preg_quote("\tab");
-    $par = preg_quote("\par");
-    echo "hi";
-    echo $tab, '  ', $par;
-    $fileString .= preg_replace("/($par |$tab )/", '', current($fileArray));
+    $tab = preg_quote('\tab');
+    $par = preg_quote('\par');
+    //$slash = preg_quote('\'');
+    echo preg_quote('\\'), "\n";
+    $fileArray[key($fileArray)] = 
+        preg_replace("/($par |$tab )/", '', current($fileArray));
+    $fileArray[key($fileArray)] = 
+        preg_replace("/[\{\}].*$/", '', current($fileArray));
+    $fileArray[key($fileArray)] = 
+        preg_replace("/^\\\\.*$/", '', current($fileArray));
+
+    $fileString .= current($fileArray);
+    
     next($fileArray);
   } // End while loop
   
