@@ -1,6 +1,6 @@
 <?php
 
-$version = "1.4.0";
+$version = "1.5.0";
 $copyright = "2005 Eric Shields";
 
 /**  This program is free software; you can redistribute it and/or modify
@@ -112,16 +112,6 @@ if(!$vFlag) {
   
 } // End if - else statement
 
-// Create the line array
-$fileArray = preg_split("/[\n\r]+/", $inputString);
-
-// Check if the file split into lines correctly
-foreach($fileArray as $v) {
-  if(preg_match("/[\n\r]+/", $v)) {
-    exit("Fatal Error(eBookFormatter.php):  Split did not preform correctly!\n");
-  } // End if statement
-} // End foreach loop
-
 // Preform the functions selected, in the order listed on the command line
 reset($fFlags);
 foreach($fFlags as $f) {
@@ -130,10 +120,22 @@ foreach($fFlags as $f) {
     
     switch(key($fFlags)) {
       case 1:
-        type1();
+        doParagraphs();
         break;
       case 2:
         removeRTF();
+        break;
+      case 3:
+        fixEllipses();
+        break;
+      case 4:
+        fixSentenceSpacing();
+        break;
+      case 5:
+        splitConversation();
+        break;
+      case 6:
+        fixSingleQuotes();
         break;
       default:
       
@@ -158,20 +160,30 @@ outputToFile();
 
 /////////// End main "method"
   
-/* This is the meat of the application.  It will take a raw text file with \n
- * terminated lines (or \n\r, as in windows), strip out the blank lines, remove
- * the terminating newlines, sort out the paragraphs, fix a few common OCR
- * errors (such as badly formed ellipses), indent and space the paragraphs, and
- * spit the result back out to a file.
+/* The heart of the program, this function will detect and seperate the paragraphs
+ * in the file.  A blank line will be inserted inbetween and the start of each 
+ * will be indented.  This method will remove the newlines at the end of each
+ * line.
  */
-function type1() {
+function doParagraphs() {
   
   global $fileArray;
   global $fileString;
+  global $inputString;
   $tags = array();
   $keep = FALSE;
   $match = '';
   
+  // Create the line array
+  $fileArray = preg_split("/[\n\r]+/", $inputString);
+  
+  // Check if the file split into lines correctly
+  foreach($fileArray as $v) {
+    if(preg_match("/[\n\r]+/", $v)) {
+      exit("Fatal Error(eBookFormatter.php):  Split did not preform correctly!\n");
+    } // End if statement
+  } // End foreach loop
+
   // Eliminate blank lines
   reset($fileArray);
   while(current($fileArray)) {
@@ -282,7 +294,6 @@ function type1() {
   $currentString = preg_replace("/(.)\s*$/", "$1", $currentString);
 
   $fileString .= $currentString;
-  $fileString = fixUp($fileString);
   
 } // End function type1()
 
@@ -317,34 +328,91 @@ function removeRTF() {
   
 } // End function removeRTF()
 
-function fixUp($broken) {
+/* Correct the spacing and number of periods in ellipses.  All will be converted
+ * to ...  This should affect nothing else.
+ */
+function fixEllipses($broken) {
+
+  // Fix ellipses
+  $fixed = preg_replace("/[ ]?\.[ ]?\.[ \.]{0,5}/", '...', $broken);
   
-  // Fix double (or more) spaces, except after periods
-  $broken = preg_replace("/([^\.])[ ]{2,}/", "$1 ", $broken);    
+  return $fixed;
+  
+} // End function fixEllipses()
+
+/* Fix the several related spacing errors, such as more than one space between
+ * words or less than 2 spaces after a punctuation mark.
+ */
+function fixSentenceSpacing($broken) {
+  
+  $pieces = '';
+
+  // Replace all instances of 2 or more spaces with 1
+  $broken = preg_replace("/[ ]{2,}/", " ", $broken);
+  
+  // Fix spacing after punctuation marks
+  while(preg_match("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", $broken, $pieces)) {
+  
+    if($pieces[3] != '') {
+    
+      if($pieces[4] != '') {
       
+        // If there's a quote and a space occurs after it, assume the quote is part
+        // of the current sentence and insert 2 spaces after it
+        $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1$3  ", $broken, 1);
+        
+      } else {
+        
+        // If there's a quote and no space occurs after it, assume the quote is part
+        // of the next sentence and insert 2 spaces before it
+        $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1  $3", $broken, 1);
+        
+      } // End if - else statements
+      
+    } else {
+      
+      // If there is no quote, then ignore the current spaces and insert 2
+      $fixed = preg_replace("/(\.|\!|\?|\:)( )?(\'|\")?( )?/", "$1  ", $broken, 1);
+        
+    } // End if - else statments
+    
+  } // End while loop
+    
+  return $fixed;
+  
+} // End function fixSentenceSpacing()
+
+/* Often a conversation will have multiple speakers within a single paragraph 
+ * without stating a switch in whose speaking.  I view this as a bad thing and a 
+ * formatting error.  This function will split up those conversations into 
+ * seperate paragraphs.
+ */
+function splitConversation($broken) {
+
   // Break apart conversations that take place on one line (e.g. ...' '... or
   // ..." "...)
-  $broken = preg_replace("/(\'|\")[ ]+(\'|\")/", "$1\n\n\t$2", $broken);
-    
-  // Fix ellipses
-  $broken = preg_replace("/[ ]?\.[ ]?\.[ \.]{0,5}/", '...', $broken);
+  $fixed = preg_replace("/(\'|\")[ ]+(\'|\")/", "$1\n\n\t$2", $broken);
   
-  // Fix multiple spaces (not good gramatical form, but works fine for reading)
-//  $broken = preg_replace("/[ ]{2,}/", ' ', $broken);
+  return $fixed;
+  
+} // End function splitConversation()
+
+/* Some files will have single quotes where there should be doubles, this function
+ * will fix those places.  NOTE:  Occurances of quotes within quotes (to denote
+ * someone quoting someone else, for example) will be replaced with double quotes.
+ */
+function fixSingleQuotes($broken) {
 
   // Replace single quotes with doubles, except for cases like "don't"
-//  $broken = preg_replace("/([\x09\x20])\x27/", "$1\x22", $broken);
-//  $broken = preg_replace("/\x27([\x20\x0A])/", "\x22$1", $broken);
-
-  // Fix places where ellipses and quotes have no spacing before the next word
-//  $fixed = preg_replace("/(\.\.\.|[ ]*\'|[ ]*\")(\w)/", "$1  $2", $broken);
-        
-  return $broken;
-//  return $fixed;
+  $broken = preg_replace("/([\x09\x20])\x27/", "$1\x22", $broken);
+  $fixed = preg_replace("/\x27([\x20\x0A])/", "\x22$1", $broken);
   
-} // End function fixUp()
-        
-/* Output the final product, $fileString, to the file opened earlier.
+  return $fixed;
+  
+} // End function fixSingleQuotes()
+
+/* Output the final product, $fileString, to the file opened earlier or to 
+ * Standard Out.
  */
 function outputToFile() {
   
