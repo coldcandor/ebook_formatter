@@ -1,31 +1,8 @@
 ChangeLog
 ---------
 
-See README.txt and ReleaseNotes.txt for further information.
+See README and RELEASE for further information.
 
-Version 1.3.0
-
-  - Initial Release.  
-
-Version 1.4.0
-
-  - Greatly updated the command line interface, including implimenting optional 
-    switches.
-  - Made the output file optional (prints to STDOUT if not present).
-  - Added a switch to prevent the printing of {Automatically formatted...}.
-
-Version 1.5.5
-
-  - Greatly updated the algorithm for spacing correction within the file
-  - Completed code modularization.  Each program feature will now be accessible
-    from a seperate function number.
-  - Added the code base for a testSuite function.
-  - Fixed the issue where running multiple functions would produce repeated 
-    text.
-  - Switched from using global variables to using passed and returned 
-    parameters.
-  - Fixed the issue where the RTF formatter would remove all newlines.
-  
 Version 1.6.0
 
   - Fleshed out the testSuite function and moved it to it's own file (no change
@@ -33,3 +10,27 @@ Version 1.6.0
   - Added a css stylesheet that the HTML output option of the testSuite uses
   - Fixed many many bugs for functions 4, 5, and 6.
   - Modified the numbered list detection to accept leading spaces
+
+Version 1.5.5
+
+  - Greatly updated the algorithm for spacing correction within the file
+  - Completed code modularization.  Each program feature will now be accessible
+    from a seperate function number.
+  - Added the code base for a testSuite function.
+  - Fixed the issue where running multiple functions would produce repeated
+    text.
+  - Switched from using global variables to using passed and returned
+    parameters.
+  - Fixed the issue where the RTF formatter would remove all newlines.
+
+
+Version 1.4.0
+
+  - Greatly updated the command line interface, including implimenting optional
+    switches.
+  - Made the output file optional (prints to STDOUT if not present).
+  - Added a switch to prevent the printing of {Automatically formatted...}.
+
+Version 1.3.0
+
+  - Initial Release.

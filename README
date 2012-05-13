@@ -1,6 +1,6 @@
 eBookFormatter Version 1.6.0
 ----------------------------
-Copyright 2005 
+Copyright 2005
 By Eric Shields
 
 WARNING!
@@ -8,9 +8,9 @@ WARNING!
 
 First and foremost... In today's world this is a very necessary statement:  THE AUTHOR OF THIS CODE IS NOT RESPONSIBLE FOR THE MATERIAL UPON WHICH IT IS USED!
 
-This is a free-time project I am pursuing in addition to full time work (or classes, depending on the time of year).  As such I do not have time to preform exahustive testing of each release.  Do not expect perfect preformance!  Some rare file setups may result in a worse formatting than the origional.  BE SURE TO BACKUP YOUR FILE(S) BEFORE USING THIS SOFTWARE, AS IT IS IMPOSSIBLE TO UNDO ANY CHANGES!
+This is a free-time project I am pursuing in addition to full time work.  As such I do not have time to preform exahustive testing of each release.  Do not expect perfect preformance!  Some rare file setups may result in a worse formatting than the origional.  BE SURE TO BACKUP YOUR FILE(S) BEFORE USING THIS SOFTWARE, AS IT IS IMPOSSIBLE TO UNDO ANY CHANGES!
 
-That said, if used properly, the program should not overwrite the origional file, but I have to protect myself from stupid people now don't I?  Right, on to the real information!
+That said, if used properly, the program should not overwrite the original file, but I have to protect myself from stupid people now don't I?  Right, on to the real information!
 
 What is eBookFormatter?
 -----------------------
@@ -19,13 +19,13 @@ eBookFormatter is a program dedicated to the task of fixing those pesky formatti
 
 eBookFormatter will allow you to convert RTF to plain text for editing (if you don't have an RTF editor, or just like plain text better), and provide many features related to the resulting text.  Perhaps you used an OCR on a PDF document, and the result was a text file with a line terminator (a newline, carriage return, or both) at the end of every line, preventing you from using formats like justification.  eBookFormatter will strip them away, leaving the text only terminated at the end of each paragraph.
 
-eBookFormatter also includes a sophisticated method of detecting paragraphs, which is approximately 95% accurate in typical text documents, the ability to correct common errors produced by OCR, and much more.
+eBookFormatter also includes a sophisticated method of detecting paragraphs, which is approximately 95% accurate in typical story documents, the ability to correct common errors produced by OCR, and much more.
 
 Features
 --------
 
 * Sophisticated paragraph detection algorithm - Creates easy to follow paragraph
-  setup:  A single blank line seperates paragraphs and the first line of each is 
+  setup:  A single blank line seperates paragraphs and the first line of each is
   indented.
 * Correction of simple OCR related mistakes
   - erratic ellipses (...)
@@ -33,7 +33,7 @@ Features
 * Seperation of dialog segments based on quote locations
 * Removal of extraneous blank lines
 * Detection of numerated lists
-* Removal of inter-paragraph newlines to allow for easy formatting (like 
+* Removal of inter-paragraph newlines to allow for easy formatting (like
   justification)
 * Removal of RTF formatting, resulting in plain text version
 * Switch-based command line interface for easy option choosing
@@ -45,7 +45,7 @@ Features
 Installing eBookFormatter
 -------------------------
 
-eBookFormatter is written in PHP 5.  As such, it can be run on any platform (operating system and hardware independant), but it requires that you have PHP 5 or higher installed on your PC.  The installation is simple:  Visit www.php.net/downloads.php, select the appropriate file, and follow the installation instructions.  
+eBookFormatter is written in PHP 5.  As such, it can be run on any platform (operating system and hardware independant), but it requires that you have PHP 5 or higher installed on your PC.  The installation is simple:  Visit www.php.net/downloads.php, select the appropriate file, and follow the installation instructions.
 
 The windows zip package need only be unzipped and the directory containing php.exe added to the PATH environment variable (START  -> right click My Computer -> Properties -> Advanced -> Environment Variables -> select Path and click edit -> type a semicolon followed by the directory path containing php.exe).  Note:  Adding to the PATH variable is not required but will allow you to run a php program from anywhere on the PC by typing PHP <file to run>.  The above method is only garunteed for Windows XP Professional.  For other windows systems, consult the (really really bad) user guide for the location of the PATH variable.  IF YOU DO NOT FEEL COMFORTABLE EDITING WINDOWS SETTINGS, DO NOT ALTER YOUR PATH VARIABLE!  Simply use full directory paths when running php.  For example, from the directory containing php.exe type: PHP <full directory path of the file to run>.
 
@@ -54,20 +54,22 @@ Using eBookFormatter
 
 eBookFormatter is a command-line based program.
 
---- Usage ---  
+--- Usage ---
 
 php eBookFormatter.php -i <inputFile> [-o <outputFile>] [-f <firstFunction>[,<secondFunction>[,<thirdFunction>[,<...>]]]] [-v] [-h]
 
 --- Command line switch descriptions ---
 
--i <inputFile>     // Designate the input file or path
-[-o <outputFile>]  // Designate the output file or path
-[-f <firstFunction[,secondFunction[,thirdFunction[,...]]]>] // Function(s) to 
+-i <inputFile>                                               // Designate the input file or path
+[-o <outputFile>]                                            // Designate the output file or path
+[-f <firstFunction[,secondFunction[,thirdFunction[,...]]]>]  // Function(s) to
          preform.  PREFORMED IN THE ORDER LISTED!
-[-v] // Do not append formatter ID at top of file
-[-h] // If 100 is specified as one of the functions, this tells the program
-        to output the results in HTML format.  If function 100 is not present, 
-        this flag is ignored.
+[-v]                                                         // Do not append formatter ID at top of file
+[-h]                                                         // If 100 is specified as one of the
+                                                                functions, this tells the program
+                                                                to output the results in HTML format.  If
+                                                                function 100 is not present, this flag is
+                                                                ignored.
 
 --- NOTES ---
 
@@ -77,7 +79,7 @@ If the output switch is not present, the result will be printed to STDOUT.
 
 Any arguements that do not have an associated switch will be ignored.
 
-The values for function are currently 1 - 6.  
+The values for function are currently 1 - 6.
 
 All functions (except 2) assume that the file is in Plain Text format.
 
@@ -105,24 +107,24 @@ This is freeware.  As such, I am not in any way required to support the software
 Uninstalling eBookFormatter
 ---------------------------
 
-As no installation is required, no uninstallation is required.  Simply delete the folder containing the eBookFormatter files. (Or just delete the files related to eBookFormatter).  
+As no installation is required, no uninstallation is required.  Simply delete the folder containing the eBookFormatter files. (Or just delete the files related to eBookFormatter).
 
 If you added the PHP folder to your windows PATH variable, you may wish to remove it now.  If so, follow the steps listed under Installing eBookFormatter and remove the semicolon and directory path you added above.
 
 Lisence Agreement
 -----------------
 
-This software is released under the GNU GPL (General Public Lisence) and is free to use, modify, and distribute so long as a complete copy of the lisence agreement is provided with the software.  See COPYING.txt for the full GPL.
+This software is released under the GNU GPL (General Public Lisence) and is free to use, modify, and distribute so long as a complete copy of the lisence agreement is provided with the software.  See COPYING for the full GPL.
 
 Donations
 ---------
 
-To donate to this or any other of my projects, send a paypal payment to cold_candor@hotmail.com
+To donate to this or any other of my projects, send a paypal payment to shiermail-ebay@yahoo.com.
 
 All donations will be put towards removing obticles preventing me from furthering my projects, i.e. having to work for food :P
 
 Contact Information
 -------------------
 
-cold_candor@hotmail.com
-https://sourceforge.net/projects/ebookformat
+shiermail-website@yahoo.com
+http://www.coldcandor.com
