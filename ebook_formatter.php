@@ -1,27 +1,12 @@
 <?php
 
-/*
- * eBookFormatter.php version 1.2.6
+/**
+ * eBookFormatter.php version 1.2.7
  *
- * Copyright 2005 Eric Shields
+ * @author Eric Shields
  */
  
- /**  This program is free software; you can redistribute it and/or modify
-  *   it under the terms of the GNU General Public License as published by
-  *   the Free Software Foundation; either version 2 of the License, or
-  *   (at your option) any later version.
-  *
-  *   This program is distributed in the hope that it will be useful,
-  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
-  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  *   GNU General Public License for more details.
-  *
-  *   You should have received a copy of the GNU General Public License
-  *   along with this program; if not, write to the Free Software
-  *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-
-include 'ASCII.php';
+//include 'ASCII.php';
 
 /* IDEA: Add a GUI
  * IDEA: Add ASCII
@@ -93,26 +78,12 @@ function type1() {
   reset($fileArray);
   while(current($fileArray)) {
     
-    // Convert the line to ASCII numbers for easier dealings.  If by some
-    // bizzare chance, an ASCII code '1' exists in the file, this will ignore
-    // it.  (ASCII code '1' is 'NUL' or the NULL character.)
-    $ASCIIarray = char_to_ASCII(current($fileArray), array(1));
-    
-    // Check each ASCII character in the line
-    reset($ASCIIarray);
-    while(current($ASCIIarray)) {
+    // If it's not a tab, newline, carriage return, or space, keep the line
+    if(preg_match("/[^\x09\x0A\x0D\x20]/", current($fileArray))) {
+         $keep = TRUE;
+         break;
+    } // End if statement
       
-      // If it's not a tab, newline, carriage return, or space, keep the line
-      if(current($ASCIIarray) != 32 && current($ASCIIarray) != 10 && 
-         current($ASCIIarray) != 13 && current($ASCIIarray) != 9) {
-           $keep = TRUE;
-           break;
-      } // End if statement
-      
-      next($ASCIIarray);
-      
-    } // End while loop
-    
     // Deal with the line accordingly
     if($keep == FALSE) {
       
@@ -172,6 +143,11 @@ function type1() {
     if(preg_match("/^(\'|\")/", current($fileArray))) {
       $tags[] = key($fileArray);
     } // End if statement
+    
+    // Check for additional new paragraph markings:  Numerated line
+    if(preg_match("/^\d+\./", current($fileArray))) {
+      $tags[] = key($fileArray);
+    } // End if statement    
 
     next($fileArray);
     
@@ -188,14 +164,16 @@ function type1() {
     
     // Strip newlines
     while(current($fileArray) && !in_array(key($fileArray), $tags)) {
-      echo "RUN ME!!!!!!!!!!!!!!!!!!!!!!\n";
-      $currentString .= preg_replace("/\s*$/", '', current($fileArray));
+      //echo "RUN ME!!!!\n";
+      $currentString .= preg_replace("/\s*$/", " ", current($fileArray));
+      $currentString .= "@NO-TAG@";
       next($fileArray);
     } // End while loop
     
     // Trim whitespace and format paragraph
     $currentString = preg_replace("/^\s*/", "\t", $currentString);
-    $currentString = preg_replace("/\s*$/D", "\n", $currentString);
+    $currentString = preg_replace("/\s*$/", '\n', $currentString);
+    $currentString .= "@TAG@";
     
     // Append current string to output string
     $fileString .= $currentString;
@@ -291,6 +269,8 @@ function fixUp($broken) {
   $fixed = preg_replace("/(\.\.\.)(\w)/", "$1  $2", $broken);
         
   return $fixed;
+  
+} // End function fixUp()
         
 function ASCII() {
   
